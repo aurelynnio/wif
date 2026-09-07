@@ -20,3 +20,11 @@
 Thumbs.db
 .vscode/
 .idea/
+
+# Temporary / Uploads
+tmp/
+**/tmp/
+temp/
+**/temp/
+coverage/
+*.lcov
