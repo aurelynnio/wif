@@ -1,4 +1,4 @@
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 const getAxiosMessage = error => {
   return (
@@ -8,7 +8,7 @@ const getAxiosMessage = error => {
   );
 };
 
-// `notify` is compatible with `toast`: callable + `notify.success/error/...`
+// `notify` keeps the old `toast`-style API: callable + notify.success/error/...
 const baseNotify = (...args) => toast(...args);
 
 export const notify = Object.assign(baseNotify, toast, {
@@ -17,4 +17,3 @@ export const notify = Object.assign(baseNotify, toast, {
     return toast.error(msg);
   },
 });
-

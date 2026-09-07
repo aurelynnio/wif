@@ -1,9 +1,9 @@
 import { SocketContext } from './socketContextBase';
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import useSocket from '@/hooks/useSocket';
 
 export const SocketProvider = ({ children }) => {
-  const { user } = useSelector(state => state.auth);
+  const user = useAuthStore(state => state.user);
   const userId = user?._id || user?.user?._id;
 
   const socketData = useSocket(userId);

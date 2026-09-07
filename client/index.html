@@ -5,6 +5,13 @@
     <link rel="icon" type="image/png" href="/images/logo.jpg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Yibu</title>
+    <!-- Google Fonts: preconnect + non-blocking stylesheet (replaces CSS @import) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    />
     <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
@@ -16,9 +23,22 @@
         // Preference order:
         // 1) localStorage.theme (new)
         // 2) localStorage.appearance (legacy admin)
-        // 3) redux-persist user.settings.theme.appearance (fallback)
-        // 4) system preference
+        // 3) zustand auth-storage user.settings.theme.appearance
+        // 4) redux-persist persist:root (fallback)
+        // 5) system preference
         var theme = localStorage.getItem("theme") || localStorage.getItem("appearance");
+        if (!theme) {
+          try {
+            var authStorage = localStorage.getItem("auth-storage");
+            if (authStorage) {
+              var parsedAuth = JSON.parse(authStorage);
+              var authUser = parsedAuth && parsedAuth.state && parsedAuth.state.user;
+              theme = authUser && authUser.settings && authUser.settings.theme && authUser.settings.theme.appearance;
+            }
+          } catch (e) {
+            // Ignore
+          }
+        }
         if (!theme) {
           try {
             var persistedRoot = localStorage.getItem("persist:root");

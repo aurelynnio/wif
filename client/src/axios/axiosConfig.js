@@ -5,6 +5,8 @@ import { AUTH_API } from './apiEndpoint';
 const backendUrl =
   import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '' : '');
 
+import { useAuthStore } from '@/store/authStore';
+
 // Type for queued promise handlers
 let isRefreshing = false;
 let failedQueue = [];
@@ -20,11 +22,7 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
-let store = null;
-
-export const injectStore = (_store) => {
-  store = _store;
-};
+export const injectStore = () => {};
 
 const api = axios.create({
   baseURL: backendUrl,
@@ -105,14 +103,8 @@ api.interceptors.response.use(
         // Attempt to refresh token via cookie
         await api.post(AUTH_API.REFRESH_TOKEN);
 
-        // If successful, the server has set a new access token cookie
-        // We just need to retry the original request
-        // Sync with Redux if store is injected (optional, mostly for IsAuthenticated state)
-        if (store) {
-          // We might not have the new token text to put in store because it is HttpOnly
-          // But we can ensure state knows we are authenticated
-          store.dispatch({ type: 'auth/setIsAuthenticated', payload: true });
-        }
+        // Sync with AuthStore
+        useAuthStore.getState().setIsAuthenticated(true);
 
         processQueue(null);
         return api(originalRequest);
@@ -125,9 +117,7 @@ api.interceptors.response.use(
           window.dispatchEvent(new Event('auth-logout'));
         }
 
-        if (store) {
-          store.dispatch({ type: 'auth/resetAuthState' });
-        }
+        useAuthStore.getState().resetAuthState();
 
         return Promise.reject(refreshError);
       } finally {

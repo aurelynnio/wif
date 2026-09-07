@@ -1,13 +1,12 @@
 import { Route, Routes } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useAuthStore } from './store/authStore';
 import { useSettings } from './hooks/useUserQuery';
 import { SocketProvider } from './contexts/SocketContext';
 import { ROUTES } from './constants/route';
 import LoadingSpinner from './components/Common/LoadingSpinner';
 import ProtectedRoute from './pages/AuthPage/ProtectedRoute';
 import AdminRoute from './pages/AuthPage/AdminRoute';
-import { resetAuthState } from './redux/slices/AuthSlice';
 import AppToaster from './components/Common/AppToaster';
 
 // Lazy Load Pages & Components
@@ -16,6 +15,7 @@ const Home = lazy(() => import('./pages/UserPage/Home'));
 const Message = lazy(() => import('./pages/UserPage/Message'));
 const Explore = lazy(() => import('./pages/UserPage/Explore'));
 const HashtagPosts = lazy(() => import('./pages/UserPage/HashtagPosts'));
+const PostDetail = lazy(() => import('./pages/UserPage/PostDetail'));
 const Notifications = lazy(() => import('./pages/UserPage/Notifications'));
 const FollowingUser = lazy(() =>
   import('./components/features/user/Profiles/FollowingUser')
@@ -73,14 +73,14 @@ const AdminPage = lazy(() => import('./pages/AdminPage/AdminPage'));
 const AccessDenied = lazy(() => import('./pages/ErrorPages/AccessDenied'));
 
 const App = () => {
-  const dispatch = useDispatch();
-  const authUser = useSelector(state => state.auth?.user);
+  const authUser = useAuthStore(state => state.user);
+  const resetAuthState = useAuthStore(state => state.resetAuthState);
   useSettings({ enabled: !!authUser });
 
   // Listen for auth logout events from axios interceptor
   useEffect(() => {
     const handleAuthLogout = () => {
-      dispatch(resetAuthState());
+      resetAuthState();
       // Redirect to login if not already there
       if (!window.location.pathname.includes('/auth/login')) {
         window.location.href = '/auth/login';
@@ -89,7 +89,7 @@ const App = () => {
 
     window.addEventListener('auth-logout', handleAuthLogout);
     return () => window.removeEventListener('auth-logout', handleAuthLogout);
-  }, [dispatch]);
+  }, [resetAuthState]);
 
   return (
     <>
@@ -115,6 +115,7 @@ const App = () => {
               {/* Explore & Notifications */}
               <Route path="explore" element={<Explore />} />
               <Route path="explore/tag/:hashtag" element={<HashtagPosts />} />
+              <Route path="post/:postId" element={<PostDetail />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="saved" element={<SavePosts />} />
 
@@ -137,7 +138,6 @@ const App = () => {
                   path="follow-requests"
                   element={<FollowRequestsSettings />}
                 />
-                <Route index element={<AccountSettings />} />
               </Route>
 
               <Route path={`${ROUTES.PROFILE}`} element={<ProfileLayout />}>
@@ -165,6 +165,8 @@ const App = () => {
           </Route>
 
           <Route path="access-denied" element={<AccessDenied />} />
+          {/* Alias cho link đặt lại mật khẩu gửi qua email (không có /auth) */}
+          <Route path="reset-password" element={<ResetPassword />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

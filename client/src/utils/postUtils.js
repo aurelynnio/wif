@@ -2,21 +2,6 @@ import { Image, Video, FileText } from 'lucide-react';
 import React from 'react';
 
 /**
- * Format count to human-readable string (e.g., "1.5K", "2.3M")
- * @param {number} count - Number to format
- * @returns {string} Formatted count string
- */
-export const formatCount = count => {
-  if (count >= 1000000) {
-    return (count / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  }
-  if (count >= 1000) {
-    return (count / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-  }
-  return count.toString();
-};
-
-/**
  * Format post time to relative string (e.g., "5m", "2h", "3d")
  * @param {string|Date} date - Date string or Date object
  * @returns {string} Formatted relative time

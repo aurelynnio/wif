@@ -40,7 +40,7 @@ export default defineConfig(() => {
             return 'react-vendor';
           }
 
-          if (id.includes('@reduxjs/toolkit') || id.includes('react-redux')) {
+          if (id.includes('zustand')) {
             return 'state-vendor';
           }
 
