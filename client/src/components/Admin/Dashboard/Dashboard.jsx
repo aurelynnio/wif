@@ -3,7 +3,6 @@ import {
   Users,
   FileText,
   MessageSquare,
-  Heart,
   ArrowUpRight,
   RefreshCcw,
   Activity,
@@ -15,6 +14,15 @@ import {
   useUserGrowth,
   useTopUsers,
 } from '@/hooks/useAdminQuery';
+
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 import UserGrowthChart from './UserGrowthChart';
 import StatCard from '../Shared/StatCard';
@@ -44,7 +52,9 @@ const Dashboard = () => {
     refetch: refetchTopUsers,
   } = useTopUsers(1, 5);
 
-  const topUsers = topUsersData?.users || [];
+  const topUsers = Array.isArray(topUsersData)
+    ? topUsersData
+    : topUsersData?.users || [];
 
   const { data: growthData } = useUserGrowth(startDate, endDate);
 
@@ -56,7 +66,7 @@ const Dashboard = () => {
   const statCards = [
     {
       title: 'Tổng người dùng',
-      value: stats?.totalUsers?.toLocaleString() || '0',
+      value: stats?.users?.total?.toLocaleString() || '0',
       change: '+12.5%',
       trend: 'up',
       icon: Users,
@@ -64,7 +74,7 @@ const Dashboard = () => {
     },
     {
       title: 'Bài viết mới',
-      value: stats?.totalPosts?.toLocaleString() || '0',
+      value: stats?.posts?.total?.toLocaleString() || '0',
       change: '+8.2%',
       trend: 'up',
       icon: FileText,
@@ -72,7 +82,7 @@ const Dashboard = () => {
     },
     {
       title: 'Bình luận',
-      value: stats?.totalComments?.toLocaleString() || '0',
+      value: stats?.comments?.total?.toLocaleString() || '0',
       change: '-2.4%',
       trend: 'down',
       icon: MessageSquare,
@@ -80,7 +90,7 @@ const Dashboard = () => {
     },
     {
       title: 'Lượt tương tác',
-      value: stats?.totalInteractions?.toLocaleString() || '0',
+      value: stats?.interactions?.total?.toLocaleString() || '0',
       change: '+24.5%',
       trend: 'up',
       icon: Activity,
@@ -93,35 +103,36 @@ const Dashboard = () => {
       {/* Header */}
       <div className="admin-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-tertiary">
             Tổng quan
           </p>
-          <h2 className="text-2xl font-semibold text-[var(--color-content)]">
+          <h2 className="text-2xl font-semibold text-content">
             Xin chào! 👋
           </h2>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+          <p className="text-sm text-text-secondary mt-1">
             Tổng quan hoạt động hôm nay
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <select
-            value={period}
-            onChange={e => setPeriod(Number(e.target.value))}
-            className="admin-select"
+          <Select
+            value={String(period)}
+            onValueChange={value => setPeriod(Number(value))}
           >
-            <option value={7}>7 ngày</option>
-            <option value={30}>30 ngày</option>
-            <option value={90}>90 ngày</option>
-          </select>
-          <button
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7">7 ngày</SelectItem>
+              <SelectItem value="30">30 ngày</SelectItem>
+              <SelectItem value="90">90 ngày</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={handleRefresh}
-            onKeyDown={event => {
-              if (event.key === 'Escape') {
-                event.currentTarget.blur();
-              }
-            }}
-            className="p-2 rounded-lg bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+            className="p-2 rounded-lg bg-muted text-muted-foreground hover:bg-muted"
             aria-label="Tải lại"
           >
             <RefreshCcw
@@ -129,7 +140,7 @@ const Dashboard = () => {
               strokeWidth={1.5}
               className={statsLoading ? 'animate-spin' : ''}
             />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -155,11 +166,11 @@ const Dashboard = () => {
         <div className="lg:col-span-2 admin-card p-4">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="text-base font-semibold text-[var(--color-content)]">
+              <h3 className="text-base font-semibold text-content">
                 Tăng trưởng người dùng
               </h3>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-2xl font-semibold text-[var(--color-content)]">
+                <span className="text-2xl font-semibold text-content">
                   {growthData?.totalGrowth || 0}
                 </span>
                 <span className="admin-pill admin-pill-success">
@@ -167,7 +178,7 @@ const Dashboard = () => {
                 </span>
               </div>
             </div>
-            <div className="p-2 bg-[var(--color-surface-secondary)] rounded-xl text-[var(--color-text-secondary)]">
+            <div className="p-2 bg-muted rounded-xl text-muted-foreground">
               <TrendingUp size={18} strokeWidth={1.6} />
             </div>
           </div>
@@ -179,15 +190,16 @@ const Dashboard = () => {
         {/* Top Users */}
         <div className="admin-card p-4 flex flex-col">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-[var(--color-content)]">
+            <h3 className="text-base font-semibold text-content">
               Người dùng tích cực
             </h3>
-            <button
+            <Button
               type="button"
-              className="text-xs font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-content)]"
+              variant="ghost"
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground"
             >
               Xem tất cả
-            </button>
+            </Button>
           </div>
           <div className="flex-1 space-y-3">
             {usersLoading
@@ -198,17 +210,17 @@ const Dashboard = () => {
                       key={i}
                       className="flex items-center gap-3 animate-pulse"
                     >
-                      <div className="w-9 h-9 rounded-full bg-neutral-100 dark:bg-neutral-800" />
+                      <div className="w-9 h-9 rounded-full bg-muted" />
                       <div className="flex-1">
-                        <div className="h-3.5 w-24 bg-neutral-100 dark:bg-neutral-800 rounded mb-1.5" />
-                        <div className="h-3 w-16 bg-neutral-100 dark:bg-neutral-800 rounded" />
+                        <div className="h-3.5 w-24 bg-muted rounded mb-1.5" />
+                        <div className="h-3 w-16 bg-muted rounded" />
                       </div>
                     </div>
                   ))
               : topUsers.map((user, index) => (
                   <div
                     key={user._id}
-                    className="flex items-center gap-3 p-2 -mx-2 rounded-xl hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
+                    className="flex items-center gap-3 p-2 -mx-2 rounded-xl hover:bg-muted transition-colors cursor-pointer"
                   >
                     <div className="relative">
                       <img
@@ -216,43 +228,43 @@ const Dashboard = () => {
                         alt={user.username}
                         className="w-9 h-9 rounded-full object-cover"
                       />
-                      <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[var(--color-surface)] rounded-full text-[9px] font-bold flex items-center justify-center text-[var(--color-text-secondary)]">
+                      <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-popover rounded-full text-[9px] font-bold flex items-center justify-center text-muted-foreground">
                         {index + 1}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-[var(--color-content)] truncate">
+                      <h4 className="text-sm font-medium text-foreground truncate">
                         {user.username}
                       </h4>
-                      <p className="text-xs text-[var(--color-text-secondary)] truncate">
+                      <p className="text-xs text-muted-foreground truncate">
                         {user.email}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-[var(--color-text-secondary)]">
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <FileText size={12} strokeWidth={1.6} />
-                        {user.postCount || 0}
+                        {user.postsCount || 0}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Heart size={12} strokeWidth={1.6} />
-                        {user.totalLikes || 0}
+                        <Users size={12} strokeWidth={1.6} />
+                        {user.followersCount || 0}
                       </span>
                     </div>
                   </div>
                 ))}
           </div>
-          <button
+          <Button
             type="button"
-            className="w-full mt-4 py-2.5 rounded-xl bg-[var(--color-surface-secondary)] text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors flex items-center justify-center gap-2"
+            variant="secondary"
+            className="w-full mt-4 py-2.5 text-sm"
           >
             Xem chi tiết
             <ArrowUpRight size={14} strokeWidth={1.5} />
-          </button>
+          </Button>
         </div>
       </div>
     </div>
   );
-
 };
 
 export default Dashboard;

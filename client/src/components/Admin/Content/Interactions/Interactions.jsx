@@ -1,5 +1,4 @@
-import { useId, useState, useEffect } from 'react';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useId, useState } from 'react';
 import {
   Search,
   ChevronDown,
@@ -8,6 +7,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { useAdminInteractions } from '@/hooks/useAdminQuery';
+import { useAdminTable } from '@/hooks/useAdminTable';
 import AdminPagination from '@/components/Admin/Shared/AdminPagination.jsx';
 
 import InteractionStats from './InteractionStats';
@@ -17,54 +17,41 @@ export default function Interactions() {
   const interactionsSearchId = useId();
   const interactionsTypeId = useId();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearch = useDebounce(searchTerm, 500);
   const [filterType, setFilterType] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // Reset page on search
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch]);
 
   const {
-    data: interactionsData,
+    list: interactionsList,
     isLoading: loading,
-    refetch: refetchInteractions,
-  } = useAdminInteractions({
-    page: currentPage,
+    searchTerm,
+    setSearchTerm,
+    currentPage,
+    setCurrentPage,
+    handleRefresh,
+    handlePageChange,
+    data: interactionsData,
+  } = useAdminTable({
+    queryHook: useAdminInteractions,
+    listKey: 'interactions',
     limit: 20,
-    type: filterType !== 'all' ? filterType : undefined,
-    search: debouncedSearch || undefined,
+    params: { type: filterType !== 'all' ? filterType : undefined },
   });
 
-  const handleRefresh = () => {
-    refetchInteractions();
-  };
-
-  const handlePageChange = newPage => {
-    setCurrentPage(newPage);
-  };
-
-  const interactions = interactionsData?.interactions || [];
   const interactionStats = interactionsData?.interactionStats || {};
   const pagination = interactionsData?.pagination || {};
-
-  const interactionsList = Array.isArray(interactions) ? interactions : [];
 
   return (
     <div className="admin-page pb-10">
       {/* Header */}
       <div className="admin-card p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-tertiary">
             Tương tác
           </p>
-          <h1 className="text-2xl font-semibold text-[var(--color-content)] flex items-center gap-3">
-            <Activity className="text-[var(--color-content)]" size={22} />
+          <h1 className="text-2xl font-semibold text-content flex items-center gap-3">
+            <Activity className="text-content" size={22} />
             Hoạt động tương tác
           </h1>
-          <p className="text-[var(--color-text-secondary)] text-sm mt-1">
+          <p className="text-text-secondary text-sm mt-1">
             Quản lý và theo dõi các hoạt động tương tác trong hệ thống
           </p>
         </div>
@@ -77,7 +64,7 @@ export default function Interactions() {
               event.currentTarget.blur();
             }
           }}
-          className="p-2 rounded-lg bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors disabled:opacity-50"
+          className="p-2 rounded-lg bg-surface-secondary text-text-secondary hover:bg-surface-hover transition-colors disabled:opacity-50"
           aria-label="Làm mới tương tác"
         >
           <RefreshCcw size={20} className={loading ? 'animate-spin' : ''} />
@@ -95,7 +82,7 @@ export default function Interactions() {
           </label>
           <Search
             size={16}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary"
           />
           <input
             id={interactionsSearchId}
@@ -114,7 +101,7 @@ export default function Interactions() {
           </label>
           <Filter
             size={16}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
           />
           <select
             id={interactionsTypeId}
@@ -134,7 +121,7 @@ export default function Interactions() {
           </select>
           <ChevronDown
             size={16}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
           />
         </div>
       </div>
@@ -149,13 +136,13 @@ export default function Interactions() {
         <AdminPagination
           currentPage={currentPage}
           label={
-            <span className="text-sm text-[var(--color-text-secondary)]">
+            <span className="text-sm text-text-secondary">
               Hiển thị{' '}
-              <span className="font-semibold text-[var(--color-content)]">
+              <span className="font-semibold text-content">
                 {interactionsList.length}
               </span>{' '}
               /{' '}
-              <span className="font-semibold text-[var(--color-content)]">
+              <span className="font-semibold text-content">
                 {pagination?.total || 0}
               </span>{' '}
               tương tác

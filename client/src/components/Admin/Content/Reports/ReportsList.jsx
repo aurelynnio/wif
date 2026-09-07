@@ -5,15 +5,35 @@ import {
   CheckCircle,
   XCircle,
   Calendar,
-  Loader2,
   RefreshCcw,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/ui/spinner';
+import {
+  Empty,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from '@/components/ui/empty';
 import {
   getTargetIcon,
-  getStatusStyle,
   getStatusText,
   getTargetTypeText,
 } from './ReportsUtils.jsx';
+
+const statusBadgeClass = status => {
+  switch (status) {
+    case 'pending':
+      return 'bg-warning/10 text-warning';
+    case 'resolved':
+      return 'bg-success/10 text-success';
+    case 'rejected':
+      return 'bg-destructive/10 text-destructive';
+    default:
+      return 'bg-surface-secondary text-text-secondary';
+  }
+};
 
 export default function ReportsList({
   loading,
@@ -27,11 +47,8 @@ export default function ReportsList({
   if (loading && reports.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <Loader2
-          size={40}
-          className="animate-spin text-[var(--color-text-tertiary)] mb-4"
-        />
-        <p className="text-[var(--color-text-secondary)] font-medium">
+        <Spinner size={40} className="animate-spin text-text-tertiary mb-4" />
+        <p className="text-text-secondary font-medium">
           Đang tải báo cáo...
         </p>
       </div>
@@ -40,15 +57,15 @@ export default function ReportsList({
 
   if (reports.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-[var(--color-text-secondary)]">
-        <div className="w-20 h-20 rounded-full bg-[var(--color-surface-secondary)] flex items-center justify-center mb-4 text-[var(--color-text-tertiary)]">
-          <CheckCircle size={40} />
-        </div>
-        <p className="font-bold text-lg text-[var(--color-content)]">
+      <Empty className="border-none py-24 h-full">
+        <EmptyMedia variant="icon" className="!size-20 !bg-surface-secondary">
+          <CheckCircle className="!size-10 !text-text-tertiary" />
+        </EmptyMedia>
+        <EmptyTitle className="font-bold text-lg text-content">
           Không tìm thấy báo cáo nào
-        </p>
-        <p className="text-sm">Hệ thống an toàn.</p>
-      </div>
+        </EmptyTitle>
+        <EmptyDescription>Hệ thống an toàn.</EmptyDescription>
+      </Empty>
     );
   }
 
@@ -67,7 +84,7 @@ export default function ReportsList({
         return (
           <div
             key={report._id || report.id}
-            className="admin-card p-4 hover:bg-[var(--color-surface-hover)] transition-colors duration-200"
+            className="admin-card p-4 hover:bg-surface-hover transition-colors duration-200"
           >
 
             <div className="flex items-start gap-4">
@@ -76,9 +93,11 @@ export default function ReportsList({
                 <img
                   src={reporter.avatar || '/images/default-avatar.png'}
                   alt={reporter.name || reporter.username || 'Reporter'}
+                  loading="lazy"
+                  decoding="async"
                   className="w-10 h-10 rounded-full object-cover"
                 />
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[var(--color-surface-secondary)] flex items-center justify-center text-[var(--color-text-tertiary)]">
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-surface-secondary flex items-center justify-center text-text-tertiary">
                   {getTargetIcon(targetType)}
                 </div>
               </div>
@@ -88,10 +107,10 @@ export default function ReportsList({
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-bold text-[var(--color-content)] text-sm">
+                      <h3 className="font-bold text-content text-sm">
                         {reporter.name || reporter.username || 'Ẩn danh'}
                       </h3>
-                      <span className="text-[var(--color-text-secondary)] text-sm">
+                      <span className="text-text-secondary text-sm">
                         báo cáo
                       </span>
                       <span className="admin-chip">
@@ -99,7 +118,7 @@ export default function ReportsList({
                       </span>
 
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-[var(--color-text-tertiary)] font-medium">
+                    <div className="flex items-center gap-3 mt-1 text-xs text-text-tertiary font-medium">
                       <span className="flex items-center gap-1">
                         <Calendar size={12} />
                         {report.createdAt
@@ -108,7 +127,7 @@ export default function ReportsList({
                             )
                           : 'N/A'}
                       </span>
-                      <span className="text-[var(--color-text-tertiary)] opacity-60">
+                      <span className="text-text-tertiary opacity-60">
                         •
                       </span>
                       <span>ID: {report._id?.slice(-6) || '...'}</span>
@@ -116,19 +135,21 @@ export default function ReportsList({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`admin-pill ${getStatusStyle(
+                    <Badge
+                      className={statusBadgeClass(
                         report.status || 'pending'
-                      )}`}
+                      )}
                     >
                       {getStatusText(report.status || 'pending')}
-                    </span>
+                    </Badge>
 
 
                     {/* Actions Dropdown */}
                     <div className="relative">
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() =>
                           setActiveDropdown(
                             activeDropdown === (report._id || report.id)
@@ -146,15 +167,15 @@ export default function ReportsList({
                           activeDropdown === (report._id || report.id)
                         }
                         aria-label="Tùy chọn"
-                        className="p-1.5 hover:bg-[var(--color-surface-hover)] rounded-full transition-colors text-[var(--color-text-tertiary)]"
+                        className="text-text-tertiary hover:bg-surface-hover"
                       >
                         <MoreHorizontal size={18} strokeWidth={1.6} />
-                      </button>
+                      </Button>
 
                       {activeDropdown === (report._id || report.id) && (
                         <div
                           role="menu"
-                          className="absolute right-0 top-full mt-2 w-48 bg-[var(--color-surface)] rounded-xl py-1.5 z-20 overflow-hidden animate-scale-in"
+                          className="absolute right-0 top-full mt-2 w-48 bg-surface rounded-xl py-1.5 z-20 overflow-hidden animate-scale-in"
                         >
                           <button
                             type="button"
@@ -163,7 +184,7 @@ export default function ReportsList({
                               setActiveDropdown(null);
                             }}
                             role="menuitem"
-                            className="w-full px-4 py-2 text-left text-sm font-medium hover:bg-[var(--color-surface-hover)] flex items-center gap-2.5 text-[var(--color-text-secondary)] transition-colors"
+                            className="w-full px-4 py-2 text-left text-sm font-medium hover:bg-surface-hover flex items-center gap-2.5 text-text-secondary transition-colors"
                           >
                             <Eye size={16} />
                             Xem chi tiết
@@ -178,7 +199,7 @@ export default function ReportsList({
                                   setActiveDropdown(null);
                                 }}
                                 role="menuitem"
-                                className="w-full px-4 py-2 text-left text-sm font-medium hover:bg-[var(--color-surface-hover)] flex items-center gap-2.5 text-[var(--color-warning)] transition-colors"
+                                className="w-full px-4 py-2 text-left text-sm font-medium hover:bg-surface-hover flex items-center gap-2.5 text-warning transition-colors"
                               >
                                 <RefreshCcw size={16} />
                                 Xem xét
@@ -190,7 +211,7 @@ export default function ReportsList({
                                   setActiveDropdown(null);
                                 }}
                                 role="menuitem"
-                                className="w-full px-4 py-2 text-left text-sm font-medium hover:bg-[var(--color-surface-hover)] flex items-center gap-2.5 text-[var(--color-success)] transition-colors"
+                                className="w-full px-4 py-2 text-left text-sm font-medium hover:bg-surface-hover flex items-center gap-2.5 text-success transition-colors"
                               >
                                 <CheckCircle size={16} />
                                 Chấp nhận
@@ -202,7 +223,7 @@ export default function ReportsList({
                                   setActiveDropdown(null);
                                 }}
                                 role="menuitem"
-                                className="w-full px-4 py-2 text-left text-sm font-medium hover:bg-[var(--color-surface-hover)] flex items-center gap-2.5 text-[var(--color-error)] transition-colors"
+                                className="w-full px-4 py-2 text-left text-sm font-medium hover:bg-surface-hover flex items-center gap-2.5 text-error transition-colors"
                               >
                                 <XCircle size={16} />
                                 Từ chối
@@ -218,29 +239,29 @@ export default function ReportsList({
 
                 {/* Reason Badge */}
                 <div className="mb-2">
-                  <span className="admin-pill admin-pill-muted text-xs font-semibold">
+                  <Badge className="bg-surface-secondary text-text-secondary text-xs font-semibold">
                     <span className="font-semibold">Lý do:</span>{' '}
                     {report.reason || report.type || 'Vi phạm'}
-                  </span>
+                  </Badge>
                 </div>
 
 
                 {/* Description */}
                 {report.description && (
-                  <p className="text-[var(--color-text-secondary)] text-sm mb-3 pl-3 bg-[var(--color-surface-secondary)] py-2 rounded-lg italic">
+                  <p className="text-text-secondary text-sm mb-3 pl-3 bg-surface-secondary py-2 rounded-lg italic">
                     "{report.description}"
                   </p>
                 )}
 
                 {/* Target Content Preview */}
-                <div className="flex items-center gap-3 pt-3 bg-[var(--color-surface-secondary)] rounded-xl px-3 py-2 mt-3">
+                <div className="flex items-center gap-3 pt-3 bg-surface-secondary rounded-xl px-3 py-2 mt-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest mb-1">
+                    <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest mb-1">
                       Nội dung bị báo cáo
                     </p>
-                    <p className="text-sm font-medium text-[var(--color-content)] truncate">
+                    <p className="text-sm font-medium text-content truncate">
                       {targetContent || (
-                        <span className="text-[var(--color-text-tertiary)] italic">
+                        <span className="text-text-tertiary italic">
                           Nội dung không khả dụng
                         </span>
                       )}
@@ -248,10 +269,10 @@ export default function ReportsList({
                   </div>
                   {targetAuthor && (
                     <div className="text-right flex-shrink-0">
-                      <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest mb-1">
+                      <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest mb-1">
                         Tác giả
                       </p>
-                      <p className="text-sm font-medium text-[var(--color-content)]">
+                      <p className="text-sm font-medium text-content">
                         {targetAuthor}
                       </p>
                     </div>

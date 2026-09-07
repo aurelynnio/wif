@@ -1,26 +1,23 @@
-import { useEffect } from 'react';
+import { Trash2, Calendar, MessageCircle, Heart } from 'lucide-react';
 import {
-  X,
-  Trash2,
-  Calendar,
-  MessageCircle,
-  Heart,
-  Loader2,
-} from 'lucide-react';
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { getStatusStyle, getStatusText } from './CommentsUtils.jsx';
-
-const useEscapeKey = (isOpen, onClose) => {
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    const handleKeyDown = event => {
-      if (event.key === 'Escape') {
-        onClose?.();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-};
 
 export const DeleteCommentModal = ({
   isOpen,
@@ -29,148 +26,106 @@ export const DeleteCommentModal = ({
   loading,
   comment,
 }) => {
-  useEscapeKey(isOpen, onClose);
-
   if (!isOpen || !comment) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black/45 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-fade-in"
-      role="dialog"
-      aria-modal="true"
-      tabIndex={-1}
-      onKeyDown={event => {
-        if (event.key === 'Escape') onClose?.();
+    <AlertDialog
+      open
+      onOpenChange={open => {
+        if (!open) onClose?.();
       }}
     >
-      <div className="admin-card w-full max-w-md p-4 rounded-2xl transform animate-scale-in">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-12 h-12 rounded-full bg-[var(--color-error)]/15 flex items-center justify-center text-[var(--color-error)] shrink-0">
-            <Trash2 size={24} />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-[var(--color-content)] tracking-tight">
-              Xóa bình luận?
-            </h3>
-            <p className="text-sm text-[var(--color-text-secondary)] font-medium">
-              Hành động này không thể hoàn tác.
-            </p>
-          </div>
-        </div>
-
-        <div className="admin-card-muted p-4 rounded-2xl mb-6">
+      <AlertDialogContent>
+        <AlertDialogMedia className="bg-destructive/10 text-destructive">
+          <Trash2 />
+        </AlertDialogMedia>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Xóa bình luận?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Hành động này không thể hoàn tác.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="admin-card-muted p-4 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
             <img
               src={comment.user?.avatar || '/images/default-avatar.png'}
               className="w-5 h-5 yb-avatar"
               alt={`${comment.user?.username || 'User'} avatar`}
             />
-            <span className="text-xs font-bold text-[var(--color-content)]">
+            <span className="text-xs font-bold text-foreground">
               {comment.user?.username}
             </span>
           </div>
-          <p className="text-sm text-[var(--color-text-secondary)] line-clamp-3 italic">
+          <p className="text-sm text-muted-foreground line-clamp-3 italic">
             "{comment.content}"
           </p>
         </div>
-
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="yb-btn yb-btn-secondary flex-1 py-3 rounded-xl font-bold text-sm"
-          >
-            Hủy bỏ
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
+        <AlertDialogFooter>
+          <AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
             disabled={loading}
-            className="yb-btn flex-1 py-3 rounded-xl font-bold bg-[var(--color-error)] text-[var(--color-text-inverse)] hover:opacity-90 transition-all flex items-center justify-center gap-2 text-sm"
+            onClick={onConfirm}
           >
-            {loading ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <>
-                <Trash2 size={16} />
-                Xóa ngay
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-    </div>
+            {loading ? <Spinner /> : <Trash2 data-icon="inline-start" />}
+            Xóa ngay
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 
 export const CommentDetailModal = ({ isOpen, onClose, comment }) => {
-  useEscapeKey(isOpen, onClose);
-
   if (!isOpen || !comment) return null;
 
   return (
-      <div
-        className="fixed inset-0 bg-black/45 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
-        role="dialog"
-      aria-modal="true"
-      tabIndex={-1}
-      onKeyDown={event => {
-        if (event.key === 'Escape') onClose?.();
+    <Dialog
+      open
+      onOpenChange={open => {
+        if (!open) onClose?.();
       }}
     >
-      <div
-        className="admin-card w-full max-w-lg rounded-2xl transform animate-scale-in overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
+      <DialogContent className="sm:max-w-lg flex flex-col gap-0 p-0 overflow-hidden">
         {/* Header */}
-        <div className="px-4 py-3.5 bg-[var(--color-surface-secondary)] flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--color-content)] tracking-tight">
+        <div className="px-4 py-3.5 bg-muted flex items-center justify-between shrink-0">
+          <DialogTitle className="text-lg font-semibold text-foreground tracking-tight">
             Chi tiết bình luận
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 hover:bg-[var(--color-surface-hover)] rounded-full transition-colors text-[var(--color-text-secondary)]"
-            aria-label="Đóng"
-          >
-            <X size={20} />
-          </button>
+          </DialogTitle>
         </div>
 
-
-        <div className="p-4 space-y-5">
+        <div className="p-4 space-y-5 overflow-y-auto">
           {/* User Info */}
           <div className="flex items-center gap-4">
             <img
               src={comment.user?.avatar || '/images/default-avatar.png'}
               alt={`${comment.user?.username || 'User'} avatar`}
-              className="w-14 h-12 rounded-full object-cover bg-[var(--color-surface-secondary)]"
+              className="w-14 h-12 rounded-full object-cover bg-muted"
             />
             <div>
-              <h3 className="font-bold text-lg text-[var(--color-content)] tracking-tight">
+              <h3 className="font-bold text-lg text-foreground tracking-tight">
                 {comment.user?.username || 'Người dùng'}
               </h3>
-              <p className="text-sm text-[var(--color-text-tertiary)] font-medium">
+              <p className="text-sm text-muted-foreground font-medium">
                 {comment.user?.email}
               </p>
             </div>
           </div>
 
           {/* Comment Content */}
-          <div className="bg-[var(--color-surface-secondary)] p-4 rounded-2xl relative group overflow-hidden">
+          <div className="bg-muted p-4 rounded-2xl relative group overflow-hidden">
             <MessageCircle
               size={120}
-              className="absolute -right-4 -bottom-4 text-neutral-200 dark:text-neutral-700/20 opacity-30 rotate-12 transition-transform group-hover:scale-110"
+              className="absolute -right-4 -bottom-4 text-muted-foreground/20 opacity-30 rotate-12 transition-transform group-hover:scale-110"
             />
-            <p className="text-base text-neutral-700 dark:text-neutral-200 leading-relaxed relative z-10 font-medium">
+            <p className="text-base text-foreground leading-relaxed relative z-10 font-medium">
               "{comment.content}"
             </p>
             <div className="flex items-center gap-2 mt-4 pt-4 relative z-10">
-              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                 Đăng vào:
               </span>
-              <span className="flex items-center gap-1.5 text-xs font-bold text-neutral-600 dark:text-neutral-400">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
                 <Calendar size={12} />
                 {new Date(comment.createdAt).toLocaleString('vi-VN')}
               </span>
@@ -179,16 +134,16 @@ export const CommentDetailModal = ({ isOpen, onClose, comment }) => {
 
           {/* Stats & Status */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-2xl bg-[var(--color-surface)] flex flex-col items-center justify-center gap-1">
-              <Heart size={20} className="text-rose-500 mb-1 fill-rose-500" />
-              <span className="text-xl font-black text-neutral-900 dark:text-white tracking-tight">
+            <div className="p-4 rounded-2xl bg-muted flex flex-col items-center justify-center gap-1">
+              <Heart size={20} className="text-destructive mb-1 fill-destructive" />
+              <span className="text-xl font-black text-foreground tracking-tight">
                 {comment.likes?.length || 0}
               </span>
-              <span className="text-[10px] uppercase font-bold text-neutral-400 tracking-widest">
+              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
                 Lượt thích
               </span>
             </div>
-            <div className="p-4 rounded-2xl bg-[var(--color-surface)] flex flex-col items-center justify-center gap-1">
+            <div className="p-4 rounded-2xl bg-muted flex flex-col items-center justify-center gap-1">
               <span
                 className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide mb-1 ${getStatusStyle(
                   comment.status || 'active'
@@ -196,13 +151,13 @@ export const CommentDetailModal = ({ isOpen, onClose, comment }) => {
               >
                 {getStatusText(comment.status || 'active')}
               </span>
-              <span className="text-[10px] uppercase font-bold text-neutral-400 tracking-widest mt-auto">
+              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-auto">
                 Trạng thái
               </span>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

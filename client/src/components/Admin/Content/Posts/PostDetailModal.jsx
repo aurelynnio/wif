@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
-  X,
   Info,
   Flag,
   Video,
@@ -10,6 +9,8 @@ import {
   MessageCircle,
   Share2,
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 const VIDEO_EXTENSIONS = /\.(mp4|webm|mov|m4v|m3u8|ogg)$/i;
 
@@ -75,52 +76,22 @@ export default function PostDetailModal({
 }) {
   const [activeTab, setActiveTab] = useState('content');
 
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    const handleKeyDown = event => {
-      if (event.key === 'Escape') {
-        onClose?.();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
   if (!isOpen || !post) return null;
 
-  const handleKeyDown = event => {
-    if (event.key === 'Escape') {
-      onClose?.();
-    }
-  };
-
   return (
-    <div
-      className="fixed inset-0 bg-black/45 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
-      role="dialog"
-      aria-modal="true"
-      tabIndex={-1}
-      onKeyDown={handleKeyDown}
+    <Dialog
+      open
+      onOpenChange={open => {
+        if (!open) onClose?.();
+      }}
     >
-      <div
-        className="admin-card w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl transform animate-scale-in overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
+      <DialogContent className="sm:max-w-3xl flex flex-col gap-0 p-0 overflow-hidden max-h-[90vh]">
         {/* Modal Header */}
-        <div className="px-4 py-3.5 bg-[var(--color-surface-secondary)] flex items-center justify-between shrink-0">
-          <h2 className="text-lg font-semibold text-[var(--color-content)] tracking-tight">
+        <div className="px-4 py-3.5 bg-muted flex items-center justify-between shrink-0">
+          <DialogTitle className="text-lg font-semibold text-foreground tracking-tight">
             Chi tiết bài viết
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="yb-btn yb-btn-ghost p-2 rounded-full text-[var(--color-text-secondary)] hover:text-[var(--color-content)] hover:bg-[var(--color-surface-hover)]"
-            aria-label="Đóng"
-          >
-            <X size={20} />
-          </button>
+          </DialogTitle>
         </div>
-
 
         {/* Tabs */}
         <div className="flex px-5 shrink-0">
@@ -128,22 +99,22 @@ export default function PostDetailModal({
             { id: 'content', label: 'Nội dung', icon: Info },
             { id: 'reports', label: 'Báo cáo', icon: Flag },
           ].map(tab => (
-            <button
+            <Button
               key={tab.id}
               type="button"
+              variant="ghost"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 my-2 text-sm font-semibold rounded-xl transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2.5 my-2 text-sm font-semibold rounded-xl transition-colors justify-start ${
                 activeTab === tab.id
-                  ? 'bg-[var(--color-surface-secondary)] text-[var(--color-content)]'
-                  : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-content)]'
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
               <tab.icon size={16} />
               {tab.label}
-            </button>
+            </Button>
           ))}
         </div>
-
 
         {/* Modal Content */}
         <div className="p-4 overflow-y-auto flex-1 custom-scrollbar">
@@ -161,15 +132,15 @@ export default function PostDetailModal({
                       <img
                         src={author.avatar || '/images/default-avatar.png'}
                         alt={author.name || author.username || 'Author avatar'}
-                        className="w-12 h-12 rounded-full object-cover bg-[var(--color-surface-secondary)]"
+                        className="w-12 h-12 rounded-full object-cover bg-muted"
                       />
                       <div>
-                        <h3 className="font-bold text-lg text-[var(--color-content)] tracking-tight">
+                        <h3 className="font-bold text-lg text-foreground tracking-tight">
                           {author.name || author.username}
                         </h3>
-                        <p className="text-sm text-[var(--color-text-secondary)] font-medium">
+                        <p className="text-sm text-muted-foreground font-medium">
                           @{author.username} •{' '}
-                          <span className="text-[var(--color-text-tertiary)]">
+                          <span className="text-muted-foreground">
                             {new Date(post.createdAt).toLocaleString('vi-VN')}
                           </span>
                         </p>
@@ -177,7 +148,7 @@ export default function PostDetailModal({
                     </div>
 
                     <div className="admin-card-muted p-4">
-                      <p className="text-[var(--color-content)] font-medium text-base leading-relaxed whitespace-pre-wrap">
+                      <p className="text-foreground font-medium text-base leading-relaxed whitespace-pre-wrap">
                         {post.content || post.caption || 'Không có nội dung'}
                       </p>
                     </div>
@@ -191,7 +162,7 @@ export default function PostDetailModal({
                         {mediaItems.map((media, idx) => (
                           <div
                             key={idx}
-                            className="relative group rounded-2xl overflow-hidden bg-[var(--color-surface)]"
+                            className="relative group rounded-2xl overflow-hidden bg-muted"
                           >
                             {media.type === 'video' ? (
                               <video
@@ -210,7 +181,7 @@ export default function PostDetailModal({
                               />
                             )}
                             {media.type === 'video' && (
-                              <div className="absolute top-3 left-3 yb-badge bg-[var(--color-surface)]/90 text-[var(--color-content)]">
+                              <div className="absolute top-3 left-3 yb-badge bg-surface/90 text-foreground">
                                 <Video size={12} />
                                 Video
                               </div>
@@ -222,26 +193,26 @@ export default function PostDetailModal({
 
                     <div className="grid grid-cols-3 gap-4">
                       <div className="admin-card-muted flex flex-col items-center justify-center p-4">
-                        <span className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
                           <Heart size={12} /> Thích
                         </span>
-                        <span className="text-xl font-black text-[var(--color-content)]">
+                        <span className="text-xl font-black text-foreground">
                           {post.likesCount || 0}
                         </span>
                       </div>
                       <div className="admin-card-muted flex flex-col items-center justify-center p-4">
-                        <span className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
                           <MessageCircle size={12} /> Bình luận
                         </span>
-                        <span className="text-xl font-black text-[var(--color-content)]">
+                        <span className="text-xl font-black text-foreground">
                           {post.commentsCount || 0}
                         </span>
                       </div>
                       <div className="admin-card-muted flex flex-col items-center justify-center p-4">
-                        <span className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
                           <Share2 size={12} /> Chia sẻ
                         </span>
-                        <span className="text-xl font-black text-[var(--color-content)]">
+                        <span className="text-xl font-black text-foreground">
                           {post.sharesCount || 0}
                         </span>
                       </div>
@@ -256,22 +227,19 @@ export default function PostDetailModal({
             <div className="space-y-4">
               {reports?.length > 0 ? (
                 reports.map(report => (
-                  <div
-                    key={report._id}
-                    className="admin-card-muted p-4"
-                  >
+                  <div key={report._id} className="admin-card-muted p-4">
                     <div className="flex justify-between items-center mb-3">
                       <div className="flex items-center gap-2.5">
-                        <span className="yb-badge bg-[var(--color-warning)]/15 text-[var(--color-warning)] font-bold">
+                        <span className="yb-badge bg-warning/15 text-warning font-bold">
                           <AlertTriangle size={12} className="mr-1.5" />
                           {report.reason}
                         </span>
                       </div>
-                      <span className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                         {new Date(report.createdAt).toLocaleDateString('vi-VN')}
                       </span>
                     </div>
-                    <p className="text-[var(--color-text-secondary)] font-medium text-sm leading-relaxed mb-4 italic p-3 bg-[var(--color-surface)] rounded-xl">
+                    <p className="text-muted-foreground font-medium text-sm leading-relaxed mb-4 italic p-3 bg-muted rounded-xl">
                       "{report.description || 'Không có chi tiết bổ sung.'}"
                     </p>
                     <div className="flex items-center gap-2">
@@ -285,9 +253,9 @@ export default function PostDetailModal({
                         } avatar`}
                         className="w-5 h-5 yb-avatar object-cover"
                       />
-                      <span className="text-xs font-bold text-[var(--color-text-secondary)]">
+                      <span className="text-xs font-bold text-muted-foreground">
                         Báo cáo bởi{' '}
-                        <span className="text-[var(--color-content)]">
+                        <span className="text-foreground">
                           @{report.reporter?.username || 'unknown'}
                         </span>
                       </span>
@@ -295,14 +263,14 @@ export default function PostDetailModal({
                   </div>
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center py-16 bg-[var(--color-surface-secondary)] rounded-2xl">
-                  <div className="w-16 h-16 rounded-full bg-[var(--color-success)]/15 flex items-center justify-center mb-4 text-[var(--color-success)]">
+                <div className="flex flex-col items-center justify-center py-16 bg-muted rounded-2xl">
+                  <div className="w-16 h-16 rounded-full bg-success/15 flex items-center justify-center mb-4 text-success">
                     <CheckCircle size={32} />
                   </div>
-                  <p className="font-bold text-[var(--color-content)] mb-1">
+                  <p className="font-bold text-foreground mb-1">
                     Nội dung sạch
                   </p>
-                  <p className="text-sm font-medium text-[var(--color-text-secondary)]">
+                  <p className="text-sm font-medium text-muted-foreground">
                     Không có báo cáo nào cho bài viết này.
                   </p>
                 </div>
@@ -312,38 +280,41 @@ export default function PostDetailModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 bg-[var(--color-surface-secondary)] flex gap-3 shrink-0">
-          <button
+        <div className="p-4 bg-muted flex gap-3 shrink-0">
+          <Button
             type="button"
+            variant="default"
             onClick={() => {
               onToggleStatus(post);
             }}
-            className={`yb-btn flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${
+            className={`flex-1 py-3 text-sm ${
               post.status === 'active'
-                ? 'bg-[var(--color-warning)] text-[var(--color-text-inverse)] hover:opacity-90'
-                : 'bg-[var(--color-success)] text-[var(--color-text-inverse)] hover:opacity-90'
+                ? 'bg-warning text-white hover:bg-warning/80'
+                : 'bg-success text-white hover:bg-success/80'
             }`}
           >
             {post.status === 'active' ? 'Ẩn bài viết' : 'Hiện bài viết'}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="destructive"
             onClick={() => {
               onDelete(post);
             }}
-            className="yb-btn flex-1 py-3 rounded-xl font-bold text-sm bg-[var(--color-error)] text-[var(--color-text-inverse)] hover:opacity-90 transition-all"
+            className="flex-1 py-3 text-sm"
           >
             Xóa bài viết
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="secondary"
             onClick={onClose}
-            className="yb-btn yb-btn-secondary px-8 py-3 rounded-xl font-bold text-sm"
+            className="px-8 py-3 text-sm"
           >
             Đóng
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

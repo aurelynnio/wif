@@ -9,11 +9,13 @@ import {
   RefreshCcw,
   CheckCircle2,
   AlertTriangle,
-  Loader2,
   Wifi,
   BarChart3,
 } from 'lucide-react';
 import { useSystemHealth } from '@/hooks/useAdminQuery';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/ui/spinner';
 
 const SystemHealth = () => {
   const [lastRefresh, setLastRefresh] = useState(new Date());
@@ -30,16 +32,16 @@ const SystemHealth = () => {
       case 'ok':
       case 'connected':
       case 'running':
-        return 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
+        return 'bg-success/10 text-success';
       case 'warning':
       case 'degraded':
-        return 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400';
+        return 'bg-warning/10 text-warning';
       case 'error':
       case 'down':
       case 'disconnected':
-        return 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400';
+        return 'bg-destructive/10 text-destructive';
       default:
-        return 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -56,7 +58,7 @@ const SystemHealth = () => {
   if (loading && !systemHealth) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
-        <Loader2 size={28} className="animate-spin text-neutral-400" />
+        <Spinner className="size-7 text-muted-foreground" />
       </div>
     );
   }
@@ -99,31 +101,28 @@ const SystemHealth = () => {
       {/* Header */}
       <div className="admin-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-tertiary">
             Hệ thống
           </p>
-          <h2 className="text-2xl font-semibold text-[var(--color-content)] flex items-center gap-2">
+          <h2 className="text-2xl font-semibold text-content flex items-center gap-2">
             <Activity size={20} strokeWidth={1.5} />
             Sức khỏe hệ thống
           </h2>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+          <p className="text-sm text-text-secondary mt-1">
             Trạng thái và hiệu suất máy chủ
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-[var(--color-text-secondary)] bg-[var(--color-surface-secondary)] px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-muted-foreground bg-muted px-3 py-1.5 rounded-lg flex items-center gap-1.5">
             <Clock size={12} />
             {lastRefresh.toLocaleTimeString()}
           </span>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={handleRefresh}
-            onKeyDown={event => {
-              if (event.key === 'Escape') {
-                event.currentTarget.blur();
-              }
-            }}
-            className="p-2 rounded-lg bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+            className="p-2 rounded-lg bg-muted text-muted-foreground hover:bg-muted"
             aria-label="Làm mới trạng thái hệ thống"
           >
             <RefreshCcw
@@ -131,7 +130,7 @@ const SystemHealth = () => {
               strokeWidth={1.5}
               className={loading ? 'animate-spin' : ''}
             />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -139,124 +138,121 @@ const SystemHealth = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="admin-card p-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400">
+            <div className="p-2 bg-success/10 rounded-xl text-success">
               <CheckCircle2 size={18} strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-[0.2em]">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
                 Trạng thái
               </p>
-              <p className="text-base font-semibold text-[var(--color-content)]">
+              <p className="text-base font-semibold text-foreground">
                 Ổn định
               </p>
             </div>
           </div>
-          <div className="w-full bg-[var(--color-surface-secondary)] rounded-full h-1.5">
-            <div className="bg-emerald-500 h-1.5 rounded-full w-[95%]"></div>
+          <div className="w-full bg-muted rounded-full h-1.5">
+            <div className="bg-success h-1.5 rounded-full w-[95%]"></div>
           </div>
         </div>
 
         <div className="admin-card p-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-xl text-blue-600 dark:text-blue-400">
+            <div className="p-2 bg-info/10 rounded-xl text-info">
               <Cpu size={18} strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-[0.2em]">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
                 CPU
               </p>
-              <p className="text-base font-semibold text-[var(--color-content)]">
+              <p className="text-base font-semibold text-foreground">
                 45%
               </p>
             </div>
           </div>
-          <div className="w-full bg-[var(--color-surface-secondary)] rounded-full h-1.5">
-            <div className="bg-blue-500 h-1.5 rounded-full w-[45%]"></div>
+          <div className="w-full bg-muted rounded-full h-1.5">
+            <div className="bg-info h-1.5 rounded-full w-[45%]"></div>
           </div>
         </div>
 
         <div className="admin-card p-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-neutral-200 dark:bg-neutral-800 rounded-xl text-neutral-700 dark:text-neutral-300">
+            <div className="p-2 bg-muted rounded-xl text-muted-foreground">
               <BarChart3 size={18} strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-[0.2em]">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
                 Memory
               </p>
-              <p className="text-base font-semibold text-[var(--color-content)]">
+              <p className="text-base font-semibold text-foreground">
                 2.4 GB
               </p>
             </div>
           </div>
-          <div className="w-full bg-[var(--color-surface-secondary)] rounded-full h-1.5">
-            <div className="bg-neutral-900 dark:bg-white h-1.5 rounded-full w-[60%]"></div>
+          <div className="w-full bg-muted rounded-full h-1.5">
+            <div className="bg-foreground h-1.5 rounded-full w-[60%]"></div>
           </div>
         </div>
 
         <div className="admin-card p-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-amber-50 dark:bg-amber-500/10 rounded-xl text-amber-600 dark:text-amber-400">
+            <div className="p-2 bg-warning/10 rounded-xl text-warning">
               <AlertTriangle size={18} strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-[0.2em]">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
                 Errors
               </p>
-              <p className="text-base font-semibold text-[var(--color-content)]">
+              <p className="text-base font-semibold text-foreground">
                 0
               </p>
             </div>
           </div>
-          <div className="w-full bg-[var(--color-surface-secondary)] rounded-full h-1.5">
-            <div className="bg-amber-500 h-1.5 rounded-full w-[0%]"></div>
+          <div className="w-full bg-muted rounded-full h-1.5">
+            <div className="bg-warning h-1.5 rounded-full w-[0%]"></div>
           </div>
         </div>
       </div>
 
       {/* Services */}
       <div>
-        <h3 className="text-base font-semibold text-[var(--color-content)] mb-4 flex items-center gap-2">
+        <h3 className="text-base font-semibold text-content mb-4 flex items-center gap-2">
           <Server size={18} strokeWidth={1.5} />
           Dịch vụ
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {services.map((service, index) => (
-            <div
-              key={index}
-              className="admin-card p-4"
-            >
+            <div key={index} className="admin-card p-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[var(--color-surface-secondary)] rounded-xl text-[var(--color-text-secondary)]">
+                  <div className="p-2 bg-muted rounded-xl text-muted-foreground">
                     <service.icon size={18} strokeWidth={1.5} />
                   </div>
-                  <span className="font-medium text-[var(--color-content)]">
+                  <span className="font-medium text-foreground">
                     {service.name}
                   </span>
                 </div>
-                <span
-                  className={`text-[10px] font-semibold uppercase px-2 py-1 rounded-full ${getStatusColor(
+                <Badge
+                  className={`text-[10px] font-semibold uppercase px-2 py-1 ${getStatusColor(
                     service.status
                   )}`}
                 >
                   {service.status}
-                </span>
+                </Badge>
               </div>
 
               <div className="space-y-2 text-sm">
                 {service.uptime && (
                   <div className="flex justify-between">
-                    <span className="text-[var(--color-text-secondary)]">Uptime</span>
-                    <span className="font-medium text-[var(--color-content)]">
+                    <span className="text-muted-foreground">Uptime</span>
+                    <span className="font-medium text-foreground">
                       {formatUptime(service.uptime)}
                     </span>
                   </div>
                 )}
                 {service.latency && (
                   <div className="flex justify-between">
-                    <span className="text-[var(--color-text-secondary)]">Latency</span>
-                    <span className="font-medium text-[var(--color-content)]">
+                    <span className="text-muted-foreground">Latency</span>
+                    <span className="font-medium text-foreground">
                       {service.latency}
                     </span>
                   </div>
@@ -267,7 +263,6 @@ const SystemHealth = () => {
         </div>
       </div>
     </div>
-
   );
 };
 

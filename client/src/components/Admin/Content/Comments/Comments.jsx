@@ -1,5 +1,4 @@
-import { useId, useState, useEffect } from 'react';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useId, useState } from 'react';
 import {
   Search,
   RefreshCcw,
@@ -11,6 +10,7 @@ import {
   useModerateComment,
   useDeleteCommentAdmin,
 } from '@/hooks/useAdminQuery';
+import { useAdminTable } from '@/hooks/useAdminTable';
 import { notify } from '@/utils/notify';
 
 import CommentsTable from './CommentsTable';
@@ -21,43 +21,31 @@ export default function Comments() {
   const commentsSearchId = useId();
   const commentsStatusId = useId();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearch = useDebounce(searchTerm, 500);
   const [filterStatus, setFilterStatus] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [selectedComment, setSelectedComment] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
 
-  // Reset page on search
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch]);
-
-  // Query
   const {
-    data: commentsData,
+    list: comments,
     isLoading: loading,
-    refetch,
-  } = useAdminComments({
-    page: currentPage,
-    limit: 10,
-    search: debouncedSearch || undefined,
-    status: filterStatus || undefined,
+    searchTerm,
+    setSearchTerm,
+    currentPage,
+    totalPages,
+    handlePageChange,
+    handleRefresh,
+  } = useAdminTable({
+    queryHook: useAdminComments,
+    listKey: 'comments',
+    params: { status: filterStatus || undefined },
   });
 
   const { mutate: moderateComment } = useModerateComment();
   const { mutate: deleteComment, isLoading: isDeleting } =
     useDeleteCommentAdmin();
-
-  const comments = Array.isArray(commentsData?.comments)
-    ? commentsData.comments
-    : Array.isArray(commentsData?.data)
-    ? commentsData.data
-    : [];
-  const totalPages = commentsData?.totalPages || 1;
 
   const handleDelete = () => {
     if (!commentToDelete) return;
@@ -92,26 +80,18 @@ export default function Comments() {
     setShowDetailModal(true);
   };
 
-  const handlePageChange = newPage => {
-    setCurrentPage(newPage);
-  };
-
-  const handleRefresh = () => {
-    refetch();
-  };
-
   return (
     <div className="admin-page">
       {/* Header */}
       <div className="admin-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-tertiary">
             Bình luận
           </p>
-          <h2 className="text-2xl font-semibold text-[var(--color-content)]">
+          <h2 className="text-2xl font-semibold text-content">
             Quản lý bình luận
           </h2>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+          <p className="text-sm text-text-secondary mt-1">
             Kiểm duyệt và quản lý tương tác người dùng
           </p>
         </div>
@@ -124,7 +104,7 @@ export default function Comments() {
               event.currentTarget.blur();
             }
           }}
-          className="p-2 rounded-lg bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+          className="p-2 rounded-lg bg-surface-secondary text-text-secondary hover:bg-surface-hover transition-colors"
           aria-label="Làm mới bình luận"
         >
           <RefreshCcw size={20} className={loading ? 'animate-spin' : ''} />
@@ -139,7 +119,7 @@ export default function Comments() {
           </label>
           <Search
             size={16}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] group-focus-within:text-[var(--color-text-secondary)] transition-colors"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-text-secondary transition-colors"
           />
           <input
             id={commentsSearchId}
@@ -158,7 +138,7 @@ export default function Comments() {
           </label>
           <Filter
             size={16}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
           />
           <select
             id={commentsStatusId}
@@ -173,7 +153,7 @@ export default function Comments() {
           </select>
           <ChevronDown
             size={16}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
           />
         </div>
       </div>

@@ -1,5 +1,8 @@
 import React from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const StatCard = ({
   title,
@@ -23,13 +26,19 @@ const StatCard = ({
     danger: 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400',
   };
 
+  const trendBadgeClass =
+    trend === 'up'
+      ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+      : trend === 'down'
+        ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400'
+        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500';
+
   return (
-    <div
-      className="admin-card p-4"
+    <Card
       role="group"
       aria-label={title}
     >
-      <div className="flex items-start justify-between mb-4">
+      <CardHeader className="flex flex-row items-start justify-between !py-0">
         <div
           className={`p-2.5 rounded-xl ${
             iconBgClass ? iconBgClass : colorStyles[color]
@@ -39,40 +48,32 @@ const StatCard = ({
         </div>
 
         {!loading && change && (
-          <div
-            className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${
-              trend === 'up'
-                ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                : trend === 'down'
-                  ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500'
-            }`}
-          >
+          <Badge className={`flex items-center gap-1 text-xs font-semibold ${trendBadgeClass}`}>
             {trend === 'up' && <TrendingUp size={12} strokeWidth={2} />}
             {trend === 'down' && <TrendingDown size={12} strokeWidth={2} />}
             {change}
-          </div>
+          </Badge>
         )}
-      </div>
+      </CardHeader>
 
-      <div>
+      <CardContent className="flex flex-col gap-1">
         {loading ? (
           <>
-            <div className="h-4 w-20 bg-neutral-100 dark:bg-neutral-800 rounded mb-2 animate-pulse" />
-            <div className="h-8 w-28 bg-neutral-100 dark:bg-neutral-800 rounded animate-pulse" />
+            <Skeleton className="h-4 w-20 mb-2" />
+            <Skeleton className="h-8 w-28" />
           </>
         ) : (
           <>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-neutral-400 mb-1">
+            <CardTitle className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400 mb-1">
               {title}
-            </p>
+            </CardTitle>
             <h3 className="text-2xl font-semibold text-neutral-800 dark:text-white tracking-tight">
               {value}
             </h3>
           </>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

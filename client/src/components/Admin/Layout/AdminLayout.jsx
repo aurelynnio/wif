@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Menu, Moon, Sun, Bell, Command } from 'lucide-react';
 import Sidebar from './Sidebar';
+import { Button } from '@/components/ui/button';
 
 const pageLabels = {
   dashboard: 'Tổng quan',
@@ -97,20 +98,21 @@ const AdminLayout = ({ children, activePage, setActivePage }) => {
         {/* Header */}
         <header className="admin-header h-14 sticky top-0 z-20 backdrop-blur-md flex items-center justify-between px-4 lg:px-6">
           <div className="flex items-center gap-3">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]"
+              className="lg:hidden -ml-2 rounded-lg text-text-secondary hover:bg-surface-hover"
               aria-label="Open admin menu"
             >
               <Menu size={20} strokeWidth={1.5} />
-            </button>
+            </Button>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-tertiary">
                 Admin Console
               </p>
-              <h1 className="text-base font-semibold text-[var(--color-content)]">
+              <h1 className="text-base font-semibold text-content">
                 {pageLabels[activePage] || activePage}
               </h1>
             </div>
@@ -118,20 +120,22 @@ const AdminLayout = ({ children, activePage, setActivePage }) => {
 
           <div className="flex items-center gap-2">
             {/* Quick Search Hint */}
-            <button
+            <Button
               type="button"
-              className="hidden md:flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-secondary)] rounded-lg hover:bg-[var(--color-surface-hover)] transition-colors"
+              variant="ghost"
+              className="hidden items-center gap-2 rounded-lg bg-surface-secondary px-3 py-1.5 text-xs text-text-secondary hover:bg-surface-hover md:flex"
               aria-label="Tìm nhanh (gợi ý phím tắt K)"
             >
               <Command size={12} strokeWidth={1.8} />
               <span>K</span>
-            </button>
+            </Button>
 
             {/* Theme Toggle */}
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] transition-colors"
+              className="rounded-lg p-2 text-text-secondary hover:bg-surface-hover"
               aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {isDarkMode ? (
@@ -139,17 +143,18 @@ const AdminLayout = ({ children, activePage, setActivePage }) => {
               ) : (
                 <Moon size={18} strokeWidth={1.5} />
               )}
-            </button>
+            </Button>
 
             {/* Notifications */}
-            <button
+            <Button
               type="button"
-              className="relative p-2 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] transition-colors"
+              variant="ghost"
+              className="relative rounded-lg p-2 text-text-secondary hover:bg-surface-hover"
               aria-label="Notifications"
             >
               <Bell size={18} strokeWidth={1.5} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full" />
-            </button>
+            </Button>
           </div>
         </header>
 

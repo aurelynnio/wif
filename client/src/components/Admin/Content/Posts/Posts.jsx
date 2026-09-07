@@ -1,5 +1,4 @@
-import { useId, useState, useEffect } from 'react';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useId, useState } from 'react';
 import {
   Search,
   RefreshCcw,
@@ -12,6 +11,7 @@ import {
   useModeratePost,
   useAdminPostReports,
 } from '@/hooks/useAdminQuery';
+import { useAdminTable } from '@/hooks/useAdminTable';
 import PostsGrid from './PostsGrid';
 import PostDetailModal from './PostDetailModal';
 import {
@@ -26,9 +26,6 @@ export default function Posts() {
   const postsTypeId = useId();
   const postsStatusId = useId();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearch = useDebounce(searchTerm, 500);
-  const [currentPage, setCurrentPage] = useState(1);
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedPost, setSelectedPost] = useState(null);
@@ -42,32 +39,23 @@ export default function Posts() {
     reason: '',
   });
 
-  // Reset page on search
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch]);
-
-  // Queries
   const {
-    data: postsData,
-    isLoading: postsLoading,
-    refetch: refetchPosts,
-  } = useAdminPosts({
-    page: currentPage,
-    limit: 10,
-    search: debouncedSearch || undefined,
-    status: filterStatus !== 'all' ? filterStatus : undefined,
-    type: filterType !== 'all' ? filterType : undefined,
+    list: posts,
+    isLoading: loading,
+    searchTerm,
+    setSearchTerm,
+    currentPage,
+    totalPages,
+    handlePageChange,
+    handleRefresh,
+  } = useAdminTable({
+    queryHook: useAdminPosts,
+    listKey: 'posts',
+    params: {
+      status: filterStatus !== 'all' ? filterStatus : undefined,
+      type: filterType !== 'all' ? filterType : undefined,
+    },
   });
-
-  const postsList = Array.isArray(postsData?.posts)
-    ? postsData.posts
-    : Array.isArray(postsData?.data)
-    ? postsData.data
-    : [];
-  const pagination = {
-    pages: postsData?.totalPages || postsData?.pages || 1,
-  };
 
   // Post Reports Query
   const { data: reportsData } = useAdminPostReports({
@@ -78,10 +66,6 @@ export default function Posts() {
   // Mutations
   const deleteMutation = useDeletePost();
   const moderateMutation = useModeratePost();
-
-  const loading = postsLoading;
-
-  const posts = Array.isArray(postsList) ? postsList : [];
 
   const handleViewDetails = post => {
     setSelectedPost(post);
@@ -125,26 +109,18 @@ export default function Posts() {
     }
   };
 
-  const handleRefresh = () => {
-    refetchPosts();
-  };
-
-  const handlePageChange = newPage => {
-    setCurrentPage(newPage);
-  };
-
   return (
     <div className="admin-page">
       {/* Header */}
       <div className="admin-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-tertiary">
             Nội dung
           </p>
-          <h2 className="text-2xl font-semibold text-[var(--color-content)]">
+          <h2 className="text-2xl font-semibold text-content">
             Quản lý bài viết
           </h2>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+          <p className="text-sm text-text-secondary mt-1">
             Giám sát và xử lý báo cáo nội dung
           </p>
         </div>
@@ -157,7 +133,7 @@ export default function Posts() {
                 event.currentTarget.blur();
               }
             }}
-            className="p-2 rounded-lg bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+            className="p-2 rounded-lg bg-surface-secondary text-text-secondary hover:bg-surface-hover transition-colors"
             aria-label="Làm mới bài viết"
           >
             <RefreshCcw size={20} className={loading ? 'animate-spin' : ''} />
@@ -173,7 +149,7 @@ export default function Posts() {
           </label>
           <Search
             size={16}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary"
           />
           <input
             id={postsSearchId}
@@ -192,7 +168,7 @@ export default function Posts() {
             </label>
             <Filter
               size={16}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
             />
             <select
               id={postsTypeId}
@@ -207,7 +183,7 @@ export default function Posts() {
             </select>
             <ChevronDown
               size={16}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
             />
           </div>
 
@@ -217,7 +193,7 @@ export default function Posts() {
             </label>
             <Filter
               size={16}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
             />
             <select
               id={postsStatusId}
@@ -233,7 +209,7 @@ export default function Posts() {
             </select>
             <ChevronDown
               size={16}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
             />
           </div>
         </div>
@@ -262,9 +238,9 @@ export default function Posts() {
       {/* Pagination */}
       <AdminPagination
         currentPage={currentPage}
-        totalPages={pagination?.pages || 1}
+        totalPages={totalPages}
         canPrev={currentPage > 1 && !loading}
-        canNext={currentPage < (pagination?.pages || 1) && !loading}
+        canNext={currentPage < totalPages && !loading}
         onPrev={() => handlePageChange(currentPage - 1)}
         onNext={() => handlePageChange(currentPage + 1)}
       />

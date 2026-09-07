@@ -16,6 +16,7 @@ import {
   Zap,
   X,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const menuItems = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Tổng quan' },
@@ -34,18 +35,19 @@ const SidebarItem = ({ item, collapsed, activePage, setActivePage }) => {
   const isActive = activePage === item.id;
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       onClick={() => setActivePage(item.id)}
       onKeyDown={event => {
         if (event.key === 'Escape') {
           event.currentTarget.blur();
         }
       }}
-      className={`group relative flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all duration-200 ${
+      className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 ${
         isActive
-          ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)]'
-          : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-content)]'
+          ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground'
+          : 'text-text-secondary hover:bg-surface-hover hover:text-content'
       } ${collapsed ? 'justify-center' : ''}`}
       title={collapsed ? item.label : undefined}
     >
@@ -68,7 +70,7 @@ const SidebarItem = ({ item, collapsed, activePage, setActivePage }) => {
       {item.badge > 0 && collapsed && (
         <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-rose-500 rounded-full" />
       )}
-    </button>
+    </Button>
   );
 };
 
@@ -92,15 +94,15 @@ export default function Sidebar({
         }`}
       >
         <Link to="/admin" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-[var(--color-primary)] text-[var(--color-primary-foreground)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center">
             <Zap size={18} strokeWidth={1.6} />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="font-semibold text-[15px] text-[var(--color-content)]">
+              <span className="font-semibold text-[15px] text-content">
                 YiBu Admin
               </span>
-              <span className="text-[11px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
+              <span className="text-[11px] uppercase tracking-[0.2em] text-text-tertiary">
                 Workspace
               </span>
             </div>
@@ -109,34 +111,36 @@ export default function Sidebar({
 
 
         {mobile && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={onCloseMobile}
             onKeyDown={event => {
               if (event.key === 'Escape') {
                 onCloseMobile?.();
               }
             }}
-            className="p-1.5 rounded-full hover:bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]"
+            className="rounded-full text-text-secondary hover:bg-surface-hover"
             aria-label="Đóng menu"
           >
             <X size={18} />
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Collapse Button - Desktop */}
       {!mobile && (
         <div className="px-3 pb-2">
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             onKeyDown={event => {
               if (event.key === 'Escape') {
                 event.currentTarget.blur();
               }
             }}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-[var(--color-text-secondary)] rounded-xl hover:bg-[var(--color-surface-hover)] transition-colors ${
+            className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-text-secondary hover:bg-surface-hover ${
               collapsed ? 'justify-center' : ''
             }`}
           >
@@ -148,7 +152,7 @@ export default function Sidebar({
                 <span>Thu gọn</span>
               </>
             )}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -175,27 +179,28 @@ export default function Sidebar({
             collapsed ? 'justify-center' : ''
           }`}
         >
-          <div className="w-9 h-9 rounded-2xl bg-[var(--color-primary)] text-[var(--color-primary-foreground)] flex items-center justify-center text-xs font-semibold">
+          <div className="w-9 h-9 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
             A
           </div>
           {!collapsed && (
             <>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[var(--color-content)] truncate">
+                <p className="text-sm font-semibold text-content truncate">
                   Admin
                 </p>
-                <p className="text-[11px] text-[var(--color-text-tertiary)] truncate">
+                <p className="text-[11px] text-text-tertiary truncate">
                   Super Admin
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
-                className="p-1.5 rounded-full hover:bg-[var(--color-surface-hover)] text-[var(--color-text-tertiary)] hover:text-rose-500 transition-colors"
+                variant="ghost"
+                className="rounded-full text-text-tertiary hover:bg-surface-hover hover:text-rose-500"
                 title="Đăng xuất"
                 aria-label="Đăng xuất"
               >
                 <LogOut size={16} strokeWidth={1.6} />
-              </button>
+              </Button>
             </>
           )}
         </div>

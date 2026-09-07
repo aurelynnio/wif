@@ -1,5 +1,4 @@
-import { useId, useState, useEffect } from 'react';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useId, useState } from 'react';
 import {
   Search,
   RefreshCcw,
@@ -13,6 +12,7 @@ import {
   useStartReportReview,
   useUpdateReportStatus,
 } from '@/hooks/useAdminQuery';
+import { useAdminTable } from '@/hooks/useAdminTable';
 import ReportStats from './ReportStats';
 import ReportsList from './ReportsList';
 import ReportDetailModal from './ReportDetailModal';
@@ -24,9 +24,6 @@ export default function Reports() {
   const reportsTypeId = useId();
   const reportsStatusId = useId();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearch = useDebounce(searchTerm, 500);
-  const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -34,32 +31,25 @@ export default function Reports() {
   const [newStatus, setNewStatus] = useState('');
   const [showStatusModal, setShowStatusModal] = useState(false);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch]);
-
   const {
-    data: reportsData,
-    isLoading: reportsLoading,
-    refetch: refetchReports,
-  } = useAdminReports({
-    page: currentPage,
-    limit: 10,
-    search: debouncedSearch || undefined,
-    status: filterStatus !== 'all' ? filterStatus : undefined,
-    type: filterType !== 'all' ? filterType : undefined,
+    list: reports,
+    isLoading: loading,
+    searchTerm,
+    setSearchTerm,
+    currentPage,
+    totalPages,
+    handlePageChange,
+    handleRefresh,
+  } = useAdminTable({
+    queryHook: useAdminReports,
+    listKey: 'reports',
+    params: {
+      status: filterStatus !== 'all' ? filterStatus : undefined,
+      type: filterType !== 'all' ? filterType : undefined,
+    },
   });
 
   const { data: pendingReportsData } = usePendingReports({ page: 1, limit: 1 });
-
-  const reportsList = Array.isArray(reportsData?.reports)
-    ? reportsData.reports
-    : Array.isArray(reportsData?.data)
-    ? reportsData.data
-    : [];
-  const pagination = {
-    pages: reportsData?.totalPages || reportsData?.pages || 1,
-  };
 
   const pendingCount =
     pendingReportsData?.totalReports || pendingReportsData?.totalDocs || 0;
@@ -68,9 +58,6 @@ export default function Reports() {
   const resolveMutation = useResolveReport();
   const startReviewMutation = useStartReportReview();
   const updateStatusMutation = useUpdateReportStatus();
-
-  const loading = reportsLoading;
-  const reports = Array.isArray(reportsList) ? reportsList : [];
 
   const handleResolve = async (report, notes) => {
     try {
@@ -131,28 +118,20 @@ export default function Reports() {
     setActiveDropdown(null);
   };
 
-  const handleRefresh = () => {
-    refetchReports();
-  };
-
-  const handlePageChange = newPage => {
-    setCurrentPage(newPage);
-  };
-
   return (
     <div className="admin-page">
       {/* Header */}
       <div className="admin-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-tertiary">
             Báo cáo
           </p>
-          <h1 className="text-2xl font-semibold text-[var(--color-content)]">
+          <h1 className="text-2xl font-semibold text-content">
             Trung tâm Báo cáo
           </h1>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+          <p className="text-sm text-text-secondary mt-1">
             Có{' '}
-            <span className="font-semibold text-[var(--color-content)]">
+            <span className="font-semibold text-content">
               {pendingCount}
             </span>{' '}
             báo cáo đang chờ xử lý
@@ -167,7 +146,7 @@ export default function Reports() {
               event.currentTarget.blur();
             }
           }}
-          className="p-2 rounded-lg bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+          className="p-2 rounded-lg bg-surface-secondary text-text-secondary hover:bg-surface-hover transition-colors"
           title="Làm mới"
           aria-label="Làm mới báo cáo"
         >
@@ -186,7 +165,7 @@ export default function Reports() {
           </label>
           <Search
             size={16}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary"
           />
           <input
             id={reportsSearchId}
@@ -205,7 +184,7 @@ export default function Reports() {
             </label>
             <Filter
               size={16}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
             />
             <select
               id={reportsTypeId}
@@ -220,7 +199,7 @@ export default function Reports() {
             </select>
             <ChevronDown
               size={16}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
             />
           </div>
 
@@ -230,7 +209,7 @@ export default function Reports() {
             </label>
             <Filter
               size={16}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
             />
             <select
               id={reportsStatusId}
@@ -245,7 +224,7 @@ export default function Reports() {
             </select>
             <ChevronDown
               size={16}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
             />
           </div>
         </div>
@@ -267,9 +246,9 @@ export default function Reports() {
       {/* Pagination */}
       <AdminPagination
         currentPage={currentPage}
-        totalPages={pagination?.pages || 1}
+        totalPages={totalPages}
         canPrev={currentPage > 1}
-        canNext={currentPage < (pagination?.pages || 1)}
+        canNext={currentPage < totalPages}
         onPrev={() => handlePageChange(currentPage - 1)}
         onNext={() => handlePageChange(currentPage + 1)}
       />

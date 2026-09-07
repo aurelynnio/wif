@@ -1,9 +1,11 @@
+import { Badge } from '@/components/ui/badge';
+
 const StatusBadge = ({ status }) => {
   const styles = {
-    active: 'admin-pill admin-pill-success',
-    pending: 'admin-pill admin-pill-warning',
-    suspended: 'admin-pill admin-pill-muted',
-    banned: 'admin-pill admin-pill-danger',
+    active: 'bg-success/10 text-success',
+    pending: 'bg-warning/10 text-warning',
+    suspended: 'bg-surface-secondary text-text-secondary',
+    banned: 'bg-destructive/10 text-destructive',
   };
 
 
@@ -23,7 +25,7 @@ const StatusBadge = ({ status }) => {
   };
 
   return (
-    <span className={styles[status] || styles.active}>{getLabel(status)}</span>
+    <Badge className={styles[status] || styles.active}>{getLabel(status)}</Badge>
 
   );
 };

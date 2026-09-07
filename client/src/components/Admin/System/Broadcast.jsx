@@ -1,7 +1,26 @@
-import { useEffect, useState } from 'react';
-import { Send, Bell, Users, Loader2, Megaphone, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { Send, Bell, Users, Megaphone, Sparkles } from 'lucide-react';
 import { useBroadcastNotification } from '@/hooks/useAdminQuery';
 import { NOTIFICATION_TYPES, TARGET_AUDIENCES } from '@/constants/broadcast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 
 const Broadcast = () => {
   const broadcastMutation = useBroadcastNotification();
@@ -39,17 +58,6 @@ const Broadcast = () => {
     setShowConfirmModal(true);
   };
 
-  useEffect(() => {
-    if (!showConfirmModal) return undefined;
-    const handleKeyDown = event => {
-      if (event.key === 'Escape') {
-        setShowConfirmModal(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showConfirmModal]);
-
   const confirmSend = async () => {
     try {
       await broadcastMutation.mutateAsync({
@@ -83,14 +91,14 @@ const Broadcast = () => {
       {/* Header */}
       <div className="admin-card p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-tertiary">
             Thông báo
           </p>
-          <h2 className="text-2xl font-semibold text-[var(--color-content)] flex items-center gap-3">
-            <Megaphone className="text-[var(--color-content)]" size={22} />
+          <h2 className="text-2xl font-semibold text-content flex items-center gap-3">
+            <Megaphone className="text-content" size={22} />
             Phát sóng thông báo
           </h2>
-          <p className="text-[var(--color-text-secondary)] text-sm mt-1">
+          <p className="text-text-secondary text-sm mt-1">
             Gửi thông báo đến người dùng hệ thống
           </p>
         </div>
@@ -103,19 +111,19 @@ const Broadcast = () => {
           <div className="admin-card p-4 space-y-6">
             {/* Notification Type Selection */}
             <div className="space-y-3">
-              <label className="text-sm font-semibold text-[var(--color-content)] ml-1">
+              <Label className="text-sm font-semibold text-content ml-1">
                 Loại thông báo
-              </label>
+              </Label>
               <div className="flex flex-wrap gap-2">
                 {NOTIFICATION_TYPES.map(type => (
-                  <button
+                  <Button
                     type="button"
                     key={type.id}
                     onClick={() => handleTypeSelect(type.id)}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-full transition-colors duration-200 ${
                       formData.type === type.id
-                        ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)]'
-                        : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted'
                     }`}
                   >
                     <type.icon
@@ -123,67 +131,54 @@ const Broadcast = () => {
                       className={
                         formData.type === type.id
                           ? 'current-color'
-                          : 'text-[var(--color-text-tertiary)]'
+                          : 'text-text-tertiary'
                       }
                       strokeWidth={2.5}
                     />
                     <span className="text-sm font-semibold">{type.label}</span>
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
 
             {/* Target Audience */}
             <div className="space-y-3">
-              <label className="text-sm font-semibold text-[var(--color-content)] ml-1">
+              <Label className="text-sm font-semibold text-content ml-1">
                 Đối tượng nhận
-              </label>
+              </Label>
               <div className="relative">
                 <Users
                   size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10"
                 />
-                <select
+                <Select
                   value={formData.targetAudience}
-                  onChange={e => handleAudienceSelect(e.target.value)}
-                  className="admin-select w-full pl-11 pr-10 appearance-none cursor-pointer"
+                  onValueChange={handleAudienceSelect}
                 >
-                  {TARGET_AUDIENCES.map(audience => (
-                    <option key={audience.id} value={audience.id}>
-                      {audience.label} - {audience.description}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-text-tertiary)]">
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M2.5 4.5L6 8L9.5 4.5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
+                  <SelectTrigger className="w-full pl-11 pr-10">
+                    <SelectValue placeholder="Chọn đối tượng" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TARGET_AUDIENCES.map(audience => (
+                      <SelectItem key={audience.id} value={audience.id}>
+                        {audience.label} - {audience.description}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             {/* Inputs */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <label
+                <Label
                   htmlFor="broadcast-title"
-                  className="text-sm font-semibold text-[var(--color-content)] ml-1"
+                  className="text-sm font-semibold text-content ml-1"
                 >
                   Tiêu đề thông báo
-                </label>
-                <input
+                </Label>
+                <Input
                   id="broadcast-title"
                   type="text"
                   name="title"
@@ -191,18 +186,17 @@ const Broadcast = () => {
                   onChange={handleInputChange}
                   placeholder="Nhập tiêu đề..."
                   aria-label="Notification title"
-                  className="admin-input w-full"
                 />
               </div>
 
               <div className="space-y-2">
-                <label
+                <Label
                   htmlFor="broadcast-message"
-                  className="text-sm font-semibold text-[var(--color-content)] ml-1"
+                  className="text-sm font-semibold text-content ml-1"
                 >
                   Nội dung chi tiết
-                </label>
-                <textarea
+                </Label>
+                <Textarea
                   id="broadcast-message"
                   name="message"
                   value={formData.message}
@@ -210,18 +204,18 @@ const Broadcast = () => {
                   placeholder="Nhập nội dung thông báo..."
                   rows={4}
                   aria-label="Notification message"
-                  className="admin-textarea w-full min-h-[140px]"
+                  className="min-h-[140px]"
                 />
               </div>
 
               <div className="space-y-2">
-                <label
+                <Label
                   htmlFor="broadcast-link"
-                  className="text-sm font-semibold text-[var(--color-content)] ml-1"
+                  className="text-sm font-semibold text-content ml-1"
                 >
                   Đường dẫn đính kèm (Tùy chọn)
-                </label>
-                <input
+                </Label>
+                <Input
                   id="broadcast-link"
                   type="url"
                   name="link"
@@ -229,7 +223,7 @@ const Broadcast = () => {
                   onChange={handleInputChange}
                   placeholder="https://example.com/..."
                   aria-label="Notification link"
-                  className="admin-input w-full text-blue-600"
+                  className="text-blue-600"
                 />
               </div>
             </div>
@@ -239,36 +233,30 @@ const Broadcast = () => {
         {/* Right Column: Preview */}
         <div className="space-y-5">
           <div className="admin-card p-4 sticky top-4">
-            <h3 className="text-base font-semibold text-[var(--color-content)] mb-4 flex items-center gap-2">
+            <h3 className="text-base font-semibold text-content mb-4 flex items-center gap-2">
               <Sparkles size={20} className="text-amber-500" />
               Xem trước
             </h3>
 
             <div className={`p-4 rounded-2xl transition-colors ${selectedType?.bg}`}>
               <div className="flex items-start gap-3">
-                <div
-                  className={`p-2 rounded-xl bg-[var(--color-surface)] ${selectedType?.text}`}
-                >
+                <div className={`p-2 rounded-xl bg-popover ${selectedType?.text}`}>
                   {selectedType && <selectedType.icon size={20} />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4
-                    className={`font-semibold text-base mb-1 ${selectedType?.text}`}
-                  >
+                  <h4 className={`font-semibold text-base mb-1 ${selectedType?.text}`}>
                     {formData.title || 'Tiêu đề thông báo'}
                   </h4>
-                  <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed mb-2">
+                  <p className="text-sm text-text-secondary leading-relaxed mb-2">
                     {formData.message ||
                       'Nội dung thông báo sẽ hiển thị ở đây...'}
                   </p>
-                  <span className="text-xs font-medium text-[var(--color-text-tertiary)] flex items-center gap-1">
+                  <span className="text-xs font-medium text-text-tertiary flex items-center gap-1">
                     <Users size={12} />
                     Gửi đến:{' '}
-                    {
-                      TARGET_AUDIENCES.find(
-                        a => a.id === formData.targetAudience
-                      )?.label
-                    }
+                    {TARGET_AUDIENCES.find(
+                      a => a.id === formData.targetAudience
+                    )?.label}
                   </span>
                   {formData.link && (
                     <div className="mt-3 pt-3">
@@ -282,96 +270,78 @@ const Broadcast = () => {
             </div>
 
             <div className="mt-6 flex justify-end">
-              <button
+              <Button
                 type="button"
                 onClick={handleSubmit}
                 disabled={
                   loading || !formData.title.trim() || !formData.message.trim()
                 }
-                onKeyDown={event => {
-                  if (event.key === 'Escape') {
-                    event.currentTarget.blur();
-                  }
-                }}
-                className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] rounded-xl font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full bg-primary text-primary-foreground"
               >
                 {loading ? (
-                  <Loader2 size={20} className="animate-spin" />
+                  <Spinner />
                 ) : (
                   <Send size={20} />
                 )}
                 Gửi thông báo ngay
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
-
       {/* Confirmation Modal */}
-      {showConfirmModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          role="dialog"
-          aria-modal="true"
-          tabIndex={-1}
-          onKeyDown={event => {
-            if (event.key === 'Escape') {
-              setShowConfirmModal(false);
-            }
-          }}
-        >
-          <div className="admin-card rounded-2xl w-full max-w-md mx-4">
-            <div className="p-4">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-                  <Bell
-                    size={24}
-                    className="text-yellow-600 dark:text-yellow-400"
-                  />
-                </div>
-                <h3 className="text-base font-semibold text-[var(--color-content)]">
-                  Xác nhận gửi thông báo
-                </h3>
+      <Dialog
+        open={showConfirmModal}
+        onOpenChange={open => {
+          if (!open) setShowConfirmModal(false);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-warning/10">
+                <Bell size={24} className="text-warning" />
               </div>
-              <p className="text-[var(--color-text-secondary)] mb-6">
-                Bạn sắp gửi thông báo đến{' '}
-                <span className="font-medium text-[var(--color-content)]">
-                  {TARGET_AUDIENCES.find(a => a.id === formData.targetAudience)
-                    ?.label || 'tất cả người dùng'}
-                </span>
-                . Hành động này không thể hoàn tác.
-              </p>
-              <div className="bg-[var(--color-surface-secondary)] rounded-lg p-4 mb-6">
-                <p className="font-medium text-[var(--color-content)]">
-                  {formData.title}
-                </p>
-                <p className="text-sm text-[var(--color-text-secondary)] mt-1 line-clamp-2">
-                  {formData.message}
-                </p>
-              </div>
-                <div className="flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmModal(false)}
-                    className="px-4 py-2 rounded-lg bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]"
-                  >
-                    Hủy bỏ
-                  </button>
-                  <button
-                    type="button"
-                    onClick={confirmSend}
-                    disabled={loading}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:opacity-90 disabled:opacity-50"
-                  >
-                    {loading && <Loader2 size={16} className="animate-spin" />}
-                    Tiến hành gửi
-                  </button>
-                </div>
+              <DialogTitle className="text-base">
+                Xác nhận gửi thông báo
+              </DialogTitle>
             </div>
+          </DialogHeader>
+          <p className="text-muted-foreground">
+            Bạn sắp gửi thông báo đến{' '}
+            <span className="font-medium text-foreground">
+              {TARGET_AUDIENCES.find(a => a.id === formData.targetAudience)
+                ?.label || 'tất cả người dùng'}
+            </span>
+            . Hành động này không thể hoàn tác.
+          </p>
+          <div className="bg-muted rounded-lg p-4">
+            <p className="font-medium text-foreground">{formData.title}</p>
+            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+              {formData.message}
+            </p>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowConfirmModal(false)}
+            >
+              Hủy bỏ
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              onClick={confirmSend}
+              disabled={loading}
+            >
+              {loading && <Spinner />}
+              Tiến hành gửi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

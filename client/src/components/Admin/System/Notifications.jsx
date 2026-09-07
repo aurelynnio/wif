@@ -5,7 +5,6 @@ import {
   Trash2,
   RefreshCcw,
   Check,
-  Loader2,
   Info,
   AlertTriangle,
   AlertCircle,
@@ -21,6 +20,9 @@ import {
   useDeleteAllNotifications,
 } from '@/hooks/useNotificationQuery';
 import { notify } from '@/utils/notify';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/ui/spinner';
 import AdminPagination from '@/components/Admin/Shared/AdminPagination.jsx';
 
 const Notifications = () => {
@@ -86,20 +88,15 @@ const Notifications = () => {
   const getIcon = type => {
     switch (type) {
       case 'info':
-        return <Info size={24} className="text-[var(--color-info)]" />;
+        return <Info size={24} className="text-info" />;
       case 'success':
-        return <CheckCircle size={24} className="text-[var(--color-success)]" />;
+        return <CheckCircle size={24} className="text-success" />;
       case 'warning':
-        return <AlertTriangle size={24} className="text-[var(--color-warning)]" />;
+        return <AlertTriangle size={24} className="text-warning" />;
       case 'alert':
-        return <AlertCircle size={24} className="text-[var(--color-error)]" />;
+        return <AlertCircle size={24} className="text-error" />;
       default:
-        return (
-          <Sparkles
-            size={24}
-            className="text-[var(--color-text-secondary)]"
-          />
-        );
+        return <Sparkles size={24} className="text-muted-foreground" />;
     }
   };
 
@@ -119,54 +116,51 @@ const Notifications = () => {
       {/* Header Section */}
       <div className="admin-card p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-tertiary">
             Thông báo
           </p>
-          <h2 className="text-2xl font-semibold text-[var(--color-content)] flex items-center gap-3">
-            <Bell className="text-[var(--color-content)]" size={22} />
+          <h2 className="text-2xl font-semibold text-content flex items-center gap-3">
+            <Bell className="text-content" size={22} />
             Thông báo hệ thống
           </h2>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-1 flex items-center gap-2">
+          <p className="text-sm text-text-secondary mt-1 flex items-center gap-2">
             Bạn có{' '}
-            <span className="admin-pill admin-pill-danger">
-              {unreadCount}
-            </span>{' '}
+            <Badge variant="destructive">{unreadCount}</Badge>{' '}
             thông báo chưa đọc
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={refreshType}
-            onKeyDown={event => {
-              if (event.key === 'Escape') {
-                event.currentTarget.blur();
-              }
-            }}
-            className="p-2 rounded-lg bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+            className="p-2 rounded-lg bg-muted text-muted-foreground hover:bg-muted"
             title="Làm mới"
             aria-label="Làm mới"
           >
             <RefreshCcw size={20} />
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
             onClick={handleMarkAllAsRead}
             disabled={unreadCount === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] text-[var(--color-text-secondary)] rounded-full hover:bg-[var(--color-surface-hover)] transition-colors font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-full bg-muted text-muted-foreground"
           >
             <Check size={16} />
             <span className="hidden sm:inline">Đánh dấu tất cả</span>
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
             onClick={handleDeleteAll}
             disabled={notifications.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] text-[var(--color-error)] rounded-full hover:bg-[var(--color-surface-hover)] transition-colors font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-full bg-muted text-destructive"
           >
             <Trash2 size={16} />
             <span className="hidden sm:inline">Xóa tất cả</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -174,7 +168,7 @@ const Notifications = () => {
       <div className="admin-card p-3">
         <div className="flex gap-2 flex-wrap">
           {['all', 'info', 'success', 'warning', 'alert'].map(type => (
-            <button
+            <Button
               key={type}
               type="button"
               onClick={() => {
@@ -183,102 +177,94 @@ const Notifications = () => {
               }}
               className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
                 filterType === type
-                  ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)]'
-                  : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-muted'
               }`}
             >
               {getTypeLabel(type)}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
 
       {/* Main Content */}
       <div className="admin-card overflow-hidden min-h-[400px] flex flex-col">
-
         {isLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 text-[var(--color-text-secondary)] gap-3">
-            <Loader2
-              size={32}
-              className="animate-spin text-[var(--color-text-tertiary)]"
-            />
+          <div className="flex-1 flex flex-col items-center justify-center p-12 text-muted-foreground gap-3">
+            <Spinner className="size-8 text-muted-foreground" />
             <span className="font-medium">Đang tải thông báo...</span>
           </div>
         ) : notifications.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-[var(--color-text-secondary)] gap-4">
-            <div className="p-4 bg-[var(--color-surface-secondary)] rounded-full">
-              <Bell
-                size={32}
-                className="text-[var(--color-text-tertiary)]"
-              />
+          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-4">
+            <div className="p-4 bg-muted rounded-full">
+              <Bell size={32} className="text-muted-foreground" />
             </div>
-            <p className="text-lg font-medium text-[var(--color-content)]">
+            <p className="text-lg font-medium text-foreground">
               Không có thông báo nào
             </p>
             <p className="text-sm">Hiện tại bạn không có thông báo mới nào.</p>
           </div>
         ) : (
-            <div>
-              {notifications.map(notification => (
-                <div
-                  key={notification._id}
-                  className={`p-4 flex gap-4 transition-all group ${
-                    !notification.isRead
-                      ? 'bg-[var(--color-surface-secondary)]'
-                      : 'hover:bg-[var(--color-surface-hover)]'
-                  }`}
-                >
-                  <div
-                    className="mt-1 flex-shrink-0 p-2.5 rounded-2xl bg-[var(--color-surface-secondary)]"
-                  >
-                    {getIcon(notification.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <p
-                        className={`text-base leading-snug ${
-                          !notification.isRead
-                            ? 'font-semibold text-[var(--color-content)]'
-                            : 'font-medium text-[var(--color-text-secondary)]'
-                        }`}
-                      >
-                        {notification.title}
-                      </p>
-                      <span className="text-xs font-medium text-[var(--color-text-tertiary)] whitespace-nowrap flex items-center gap-1.5 bg-[var(--color-surface-secondary)] px-2 py-1 rounded-full">
-                        <Clock size={12} />
-                        {new Date(notification.createdAt).toLocaleString('vi-VN')}
-                      </span>
-                    </div>
-                    <p className="text-sm text-[var(--color-text-secondary)] mt-1.5 leading-relaxed">
-                      {notification.message}
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {!notification.isRead && (
-                      <button
-                        type="button"
-                        onClick={() => handleMarkAsRead(notification._id)}
-                        className="p-2 text-[var(--color-info)] hover:bg-[var(--color-surface-hover)] rounded-xl transition-colors bg-[var(--color-surface)]"
-                        title="Đánh dấu đã đọc"
-                        aria-label="Đánh dấu đã đọc"
-                      >
-                        <CheckCircle size={18} />
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(notification._id)}
-                      className="p-2 text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-[var(--color-surface-hover)] rounded-xl transition-colors bg-[var(--color-surface)]"
-                      title="Xóa"
-                      aria-label="Xóa"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
+          <div>
+            {notifications.map(notification => (
+              <div
+                key={notification._id}
+                className={`p-4 flex gap-4 transition-all group ${
+                  !notification.isRead ? 'bg-muted' : 'hover:bg-muted'
+                }`}
+              >
+                <div className="mt-1 flex-shrink-0 p-2.5 rounded-2xl bg-muted">
+                  {getIcon(notification.type)}
                 </div>
-              ))}
-            </div>
-
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <p
+                      className={`text-base leading-snug ${
+                        !notification.isRead
+                          ? 'font-semibold text-foreground'
+                          : 'font-medium text-muted-foreground'
+                      }`}
+                    >
+                      {notification.title}
+                    </p>
+                    <span className="text-xs font-medium text-muted-foreground whitespace-nowrap flex items-center gap-1.5 bg-muted px-2 py-1 rounded-full">
+                      <Clock size={12} />
+                      {new Date(notification.createdAt).toLocaleString('vi-VN')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                    {notification.message}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {!notification.isRead && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleMarkAsRead(notification._id)}
+                      className="p-2 rounded-xl bg-muted text-info hover:bg-muted"
+                      title="Đánh dấu đã đọc"
+                      aria-label="Đánh dấu đã đọc"
+                    >
+                      <CheckCircle size={18} />
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(notification._id)}
+                    className="p-2 rounded-xl bg-muted text-muted-foreground hover:text-destructive hover:bg-muted"
+                    title="Xóa"
+                    aria-label="Xóa"
+                  >
+                    <Trash2 size={18} />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -297,11 +283,9 @@ const Notifications = () => {
             }
           }}
         />
-
       )}
     </div>
   );
 };
 
 export default Notifications;
-

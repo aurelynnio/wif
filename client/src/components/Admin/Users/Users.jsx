@@ -1,5 +1,4 @@
 import { useId, useState } from 'react';
-import { useDebounce } from '@/hooks/useDebounce';
 import { Search, RefreshCcw, Filter, ChevronDown } from 'lucide-react';
 import {
   useAdminUsers,
@@ -11,6 +10,7 @@ import {
   useAdminUserPosts,
   useAdminUserReports,
 } from '@/hooks/useAdminQuery';
+import { useAdminTable } from '@/hooks/useAdminTable';
 
 import UsersTable from './UsersTable';
 import UserDetailModal from './UserDetailModal';
@@ -21,32 +21,28 @@ const Users = () => {
   const usersSearchId = useId();
   const statusFilterId = useId();
 
-  const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [filterRole] = useState('all');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const debouncedSearch = useDebounce(searchQuery, 500);
 
   const [showActionModal, setShowActionModal] = useState(false);
   const [actionType, setActionType] = useState('');
   const [actionReason, setActionReason] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
 
   const {
-    data: usersData,
+    list: users,
     isLoading: usersLoading,
-    refetch: refetchUsers,
-  } = useAdminUsers({
-    page: currentPage,
-    limit: 10,
-    search: debouncedSearch || undefined,
-    status: filterStatus !== 'all' ? filterStatus : undefined,
-    role: filterRole !== 'all' ? filterRole : undefined,
+    searchTerm,
+    setSearchTerm,
+    currentPage,
+    totalPages,
+    handlePageChange,
+    handleRefresh,
+  } = useAdminTable({
+    queryHook: useAdminUsers,
+    listKey: 'users',
+    params: { status: filterStatus !== 'all' ? filterStatus : undefined },
   });
-
-  const usersList = usersData?.users || [];
-  const pagination = { pages: usersData?.totalPages || 1 };
 
   const { data: postsData } = useAdminUserPosts({
     userId: selectedUser?._id,
@@ -65,9 +61,6 @@ const Users = () => {
   const unbanMutation = useUnbanUser();
   const suspendMutation = useSuspendUser();
   const warnMutation = useWarnUser();
-
-  const loading = usersLoading;
-  const users = Array.isArray(usersList) ? usersList : [];
 
   const handleViewUser = user => {
     setSelectedUser(user);
@@ -142,31 +135,31 @@ const Users = () => {
       {/* Header */}
       <div className="admin-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-tertiary">
             Người dùng
           </p>
-          <h2 className="text-2xl font-semibold text-[var(--color-content)]">
+          <h2 className="text-2xl font-semibold text-content">
             Quản lý người dùng
           </h2>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+          <p className="text-sm text-text-secondary mt-1">
             Quản lý tài khoản và phân quyền
           </p>
         </div>
         <button
           type="button"
-          onClick={() => refetchUsers()}
+          onClick={handleRefresh}
           onKeyDown={event => {
             if (event.key === 'Escape') {
               event.currentTarget.blur();
             }
           }}
-          className="p-2 rounded-lg bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+          className="p-2 rounded-lg bg-surface-secondary text-text-secondary hover:bg-surface-hover transition-colors"
           aria-label="Làm mới danh sách người dùng"
         >
           <RefreshCcw
             size={18}
             strokeWidth={1.5}
-            className={loading ? 'animate-spin' : ''}
+            className={usersLoading ? 'animate-spin' : ''}
           />
         </button>
       </div>
@@ -179,15 +172,15 @@ const Users = () => {
           </label>
           <Search
             size={16}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary"
           />
           <input
             id={usersSearchId}
             type="text"
             placeholder="Tìm theo tên, email..."
-            value={searchQuery}
+            value={searchTerm}
             aria-label="Search users"
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             className="admin-input w-full pl-10"
           />
         </div>
@@ -199,7 +192,7 @@ const Users = () => {
             </label>
             <Filter
               size={16}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
             />
             <select
               id={statusFilterId}
@@ -215,7 +208,7 @@ const Users = () => {
             </select>
             <ChevronDown
               size={16}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
             />
           </div>
         </div>
@@ -237,11 +230,11 @@ const Users = () => {
 
       <AdminPagination
         currentPage={currentPage}
-        totalPages={pagination?.pages || 1}
+        totalPages={totalPages}
         canPrev={currentPage > 1 && !usersLoading}
-        canNext={currentPage < (pagination?.pages || 1) && !usersLoading}
-        onPrev={() => setCurrentPage(p => Math.max(1, p - 1))}
-        onNext={() => setCurrentPage(p => p + 1)}
+        canNext={currentPage < totalPages && !usersLoading}
+        onPrev={() => handlePageChange(currentPage - 1)}
+        onNext={() => handlePageChange(currentPage + 1)}
       />
 
 
@@ -268,7 +261,7 @@ const Users = () => {
             setShowActionModal(false);
             setActionReason('');
           }}
-          loading={loading}
+          loading={usersLoading}
         />
       )}
     </div>
