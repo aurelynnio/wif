@@ -1,10 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/store/authStore';
 import api from '@/axios/axiosConfig';
 import { USER_API } from '@/axios/apiEndpoint';
 import { extractData } from '@/utils/apiUtils';
 import { toFormData } from '@/utils/toFormData';
-import { useDispatch } from 'react-redux';
-import { updateUserProfile } from '@/redux/slices/AuthSlice';
 
 /**
  * Hook to fetch user profile
@@ -99,7 +98,8 @@ export const useSuggestions = (limit = 10) => {
  */
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
-  const dispatch = useDispatch();
+  const updateUserProfile = useAuthStore(state => state.updateUserProfile);
+
   return useMutation({
     mutationFn: async profileData => {
       // Backend expects multipart/form-data when uploading avatar/cover.
@@ -114,12 +114,11 @@ export const useUpdateProfile = () => {
     onSuccess: data => {
       const id = data?._id || data?.id;
 
-      // Update auth user in Redux so nav/header/avatar/etc update immediately.
+      // Update auth user in Zustand so nav/header/avatar/etc update immediately.
       if (data && typeof data === 'object') {
-        dispatch(updateUserProfile(data));
+        updateUserProfile(data);
       }
 
-      // Update profile cache for common keys.
       if (id) {
         queryClient.setQueryData(['profile', id], data);
         queryClient.invalidateQueries(['profile', id]);

@@ -93,7 +93,8 @@ export const useSendMessage = () => {
       formData.append('type', type);
       if (attachments) {
         attachments.forEach(file => {
-          formData.append('attachments', file);
+          // Server multer cấu hình field 'files' (upload.array('files', 3))
+          formData.append('files', file);
         });
       }
       const response = await api.post(MESSAGE_API.SEND, formData, {
@@ -154,22 +155,6 @@ export const useUnreadMessagesCount = () => {
 };
 
 /**
- * Hook to fetch conversation media
- * @param {string} conversationId - Conversation ID
- * @returns {import('@tanstack/react-query').UseQueryResult} Query result containing media list
- */
-export const useConversationMedia = conversationId => {
-  return useQuery({
-    queryKey: ['messages', 'media', conversationId],
-    queryFn: async () => {
-      const response = await api.get(MESSAGE_API.GET_MEDIA(conversationId));
-      return extractData(response);
-    },
-    enabled: !!conversationId,
-  });
-};
-
-/**
  * Hook to fetch conversation by ID
  * @param {string} conversationId - Conversation ID
  * @returns {import('@tanstack/react-query').UseQueryResult} Query result containing conversation info
@@ -214,8 +199,9 @@ export const useCreateGroup = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ name, participantIds }) => {
+      // Server CreateGroupConversation đọc field `groupName`
       const response = await api.post(MESSAGE_API.CREATE_GROUP, {
-        name,
+        groupName: name,
         participantIds,
       });
       return extractData(response);
@@ -256,7 +242,11 @@ export const useUpdateGroup = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ groupId, data }) => {
-      const response = await api.put(MESSAGE_API.UPDATE_GROUP(groupId), data);
+      // Server UpdateGroupConversation đọc `groupName`/`groupAvatar`
+      const response = await api.put(MESSAGE_API.UPDATE_GROUP(groupId), {
+        ...data,
+        groupName: data?.name,
+      });
       return extractData(response);
     },
     onSuccess: (_, variables) => {

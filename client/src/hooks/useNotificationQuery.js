@@ -19,7 +19,11 @@ export const useNotifications = (filter = 'all') => {
     queryFn: async ({ pageParam = 1 }) => {
       const params = { page: pageParam, limit: 20 };
       if (filter !== 'all') {
-        params.type = filter === 'unread' ? undefined : filter;
+        if (filter === 'unread') {
+          params.unreadOnly = true;
+        } else {
+          params.type = filter;
+        }
       }
 
       const response = await api.get(NOTIFICATION_API.GET_ALL, { params });

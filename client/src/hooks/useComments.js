@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import { useSocketContext } from '@/contexts/useSocketContext';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -96,7 +96,7 @@ const removeCommentFromTree = (comments, commentId) => {
  */
 const useComments = postId => {
   const { socket } = useSocketContext();
-  const { user } = useSelector(state => state.auth);
+  const user = useAuthStore(state => state.user);
   const queryClient = useQueryClient();
   const [replyingTo, setReplyingTo] = useState(null);
   const [localError, setLocalError] = useState(null);

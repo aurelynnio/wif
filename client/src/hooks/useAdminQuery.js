@@ -205,7 +205,7 @@ export const useSuspendUser = () => {
     mutationFn: async ({ userId, days, reason }) => {
       const response = await api.post(ADMIN_API.SUSPEND_USER, {
         userId,
-        duration: days,
+        days,
         reason,
       });
       return extractData(response);
