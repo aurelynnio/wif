@@ -4,7 +4,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test",
     "dev": "cross-env NODE_ENV=development nodemon src/server.js",
     "dev:docker": "cross-env NODE_ENV=development MONGODB_URI=mongodb://localhost:27018/socialmedia?directConnection=true nodemon src/server.js",
     "dev:worker:notification": "cross-env NODE_ENV=development nodemon src/workers/notification.worker.js",
@@ -26,7 +26,6 @@
   "dependencies": {
     "@faker-js/faker": "^9.9.0",
     "amqp-connection-manager": "^5.0.0",
-    "amqplib": "^0.10.9",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.8.0",
     "cookie-parser": "^1.4.7",

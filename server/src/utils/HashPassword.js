@@ -5,10 +5,10 @@ import logger from "../configs/logger.js";
 export const hashPassword = async (password) => {
   try {
     const salt = 10;
-    const PasswordHashed = await bcrypt.hash(password, salt);
-    return PasswordHashed;
+    return await bcrypt.hash(password, salt);
   } catch (e) {
-    logger.error(`Error hash password ${e}`);
+    logger.error(`Error hashing password: ${e}`);
+    throw e;
   }
 };
 

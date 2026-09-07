@@ -366,7 +366,10 @@ PostSchema.statics.getExplorePost = async function (userId, options = {}) {
         // Boost posts with matching hashtags to user interests
         interestMatch: {
           $size: {
-            $setIntersection: ["$hashtags", user?.interests || []],
+            $setIntersection: [
+              { $ifNull: ["$hashtags", []] },
+              user?.interests || [],
+            ],
           },
         },
         // Combined ranking score

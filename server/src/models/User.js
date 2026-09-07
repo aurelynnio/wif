@@ -1,4 +1,5 @@
 import mongoose, { Schema, model } from 'mongoose';
+import bcrypt from 'bcrypt';
 
 /**
  * User Model - Optimized for Ranking & Recommendation
@@ -98,6 +99,7 @@ const UserSchema = new Schema(
       },
       reason: { type: String, default: '' },
       expiresAt: { type: Date, default: null },
+      suspendedUntil: { type: Date, default: null },
       moderatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
       moderatedAt: { type: Date },
     },
@@ -124,6 +126,28 @@ const UserSchema = new Schema(
         default: 'everyone',
       },
       showActivity: { type: Boolean, default: true },
+    },
+
+    // Security (password reset, email verification, 2FA)
+    security: {
+      passwordResetToken: { type: String },
+      passwordResetExpires: { type: Date },
+      emailVerificationToken: { type: String },
+      emailVerificationExpires: { type: Date },
+      twoFactorSecret: { type: String },
+      twoFactorEnabled: { type: Boolean, default: false },
+      twoFactorRecoveryCodes: [{ type: String }],
+      twoFactorTempSecret: { type: String },
+      twoFactorTempExpires: { type: Date },
+    },
+
+    // OAuth integrations
+    oauth: {
+      google: {
+        id: { type: String },
+        email: { type: String },
+        picture: { type: String },
+      },
     },
   },
   {
@@ -224,6 +248,11 @@ UserSchema.methods.calculateActivityScore = function () {
   );
 };
 
+UserSchema.methods.comparePassword = async function (candidatePassword) {
+  if (!this.password || !candidatePassword) return false;
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
 // ============ STATICS ============
 UserSchema.statics.getRecommendedUsers = async function (userId, limit = 10) {
   const user = await this.findById(userId).select('interests location');
@@ -260,7 +289,10 @@ UserSchema.statics.getRecommendedUsers = async function (userId, limit = 10) {
       $addFields: {
         commonInterests: {
           $size: {
-            $setIntersection: ['$interests', user.interests || []],
+            $setIntersection: [
+              { $ifNull: ['$interests', []] },
+              user.interests || [],
+            ],
           },
         },
         locationMatch: {

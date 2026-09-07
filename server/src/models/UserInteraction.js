@@ -294,21 +294,27 @@ UserInteractionSchema.statics.getUserProfile = async function (userId) {
   ];
 
   const [result] = await this.aggregate(pipeline);
+  const data = result || {
+    topAuthors: [],
+    topHashtags: [],
+    interactionCounts: [],
+    recentEngaged: [],
+  };
 
   return {
-    favoriteAuthors: result.topAuthors.map((a) => ({
+    favoriteAuthors: (data.topAuthors || []).map((a) => ({
       userId: a._id,
       score: a.score,
     })),
-    favoriteHashtags: result.topHashtags.map((h) => ({
+    favoriteHashtags: (data.topHashtags || []).map((h) => ({
       name: h._id,
       score: h.score,
     })),
-    interactionCounts: result.interactionCounts.reduce((acc, i) => {
+    interactionCounts: (data.interactionCounts || []).reduce((acc, i) => {
       acc[i._id] = i.count;
       return acc;
     }, {}),
-    recentEngagedPosts: result.recentEngaged[0]?.postIds || [],
+    recentEngagedPosts: data.recentEngaged?.[0]?.postIds || [],
   };
 };
 
@@ -422,7 +428,7 @@ UserInteractionSchema.statics.getRecommendedContent = async function (
             {
               $size: {
                 $setIntersection: [
-                  "$hashtags",
+                  { $ifNull: ["$hashtags", []] },
                   profile.favoriteHashtags.map((h) => h.name),
                 ],
               },

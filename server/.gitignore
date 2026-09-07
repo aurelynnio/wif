@@ -34,3 +34,5 @@ Thumbs.db
 *.swp
 *.bak
 *.tmp
+tmp/
+temp/

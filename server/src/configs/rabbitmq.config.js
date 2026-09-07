@@ -1,15 +1,13 @@
 import amqp from 'amqp-connection-manager';
+import config from './config.js';
 import logger from './logger.js';
 
 const MODULE = 'rabbitmq';
-const urls = (process.env.RABBITMQ_URLS || process.env.RABBITMQ_URL || '')
+const rawUrls = process.env.RABBITMQ_URLS || process.env.RABBITMQ_URL || 'amqp://localhost:5672';
+const urls = rawUrls
   .split(',')
   .map(item => item.trim())
   .filter(Boolean);
-
-if (urls.length === 0) {
-  throw new Error('Missing RabbitMQ URL. Set RABBITMQ_URLS or RABBITMQ_URL.');
-}
 
 export const rabbit = {
   notification: {
