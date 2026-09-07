@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
 import {
   Sparkles,
   Lock,
@@ -10,15 +9,17 @@ import {
   CheckCircle,
   ArrowLeft,
 } from "lucide-react";
-import { resetPassword } from "@/redux/actions/authActions";
-import { clearError } from "@/redux/slices/AuthSlice";
+import { useAuthStore } from "@/store/authStore";
 import { notify } from '@/utils/notify';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 
 const ResetPassword = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { loading, error } = useSelector((state) => state.auth);
+  const { resetPassword, clearError, loading, error } = useAuthStore();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -39,9 +40,9 @@ const ResetPassword = () => {
 
   useEffect(() => {
     return () => {
-      dispatch(clearError());
+      clearError();
     };
-  }, [dispatch]);
+  }, [clearError]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -67,10 +68,8 @@ const ResetPassword = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const result = await dispatch(
-      resetPassword({ token, newPassword: formData.newPassword })
-    );
-    if (resetPassword.fulfilled.match(result)) {
+    const result = await resetPassword({ token, newPassword: formData.newPassword });
+    if (result.success) {
       setSuccess(true);
       notify.success("Đặt lại mật khẩu thành công!");
     }
@@ -99,7 +98,7 @@ const ResetPassword = () => {
       </div>
 
       {/* Right Panel - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-5 sm:p-8 bg-white dark:bg-black">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-5 sm:p-8 bg-background">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center mb-10">
@@ -111,10 +110,10 @@ const ResetPassword = () => {
           {!success ? (
             <>
               <div className="mb-10">
-                <h2 className="text-3xl font-bold text-black dark:text-white mb-2">
+                <h2 className="text-3xl font-bold text-foreground mb-2">
                   Đặt lại mật khẩu
                 </h2>
-                <p className="text-neutral-500">
+                <p className="text-muted-foreground">
                   Nhập mật khẩu mới cho tài khoản của bạn.
                 </p>
               </div>
@@ -122,68 +121,72 @@ const ResetPassword = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* New Password */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-black dark:text-white">
-                    Mật khẩu mới
-                  </label>
+                  <Label htmlFor="newPassword">Mật khẩu mới</Label>
                   <div className="relative">
                     <Lock
-                      size={18}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"
+                      size={20}
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
                     />
-                    <input
+                    <Input
+                      id="newPassword"
                       type={showPassword ? "text" : "password"}
                       name="newPassword"
                       value={formData.newPassword}
                       onChange={handleChange}
                       placeholder="Nhập mật khẩu mới"
-                      className="w-full pl-12 pr-12 py-3.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-black dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
+                      className="pl-10 pr-10"
                     />
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </Button>
                   </div>
                 </div>
 
                 {/* Confirm Password */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-black dark:text-white">
-                    Xác nhận mật khẩu
-                  </label>
+                  <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
                   <div className="relative">
                     <Lock
-                      size={18}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"
+                      size={20}
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
                     />
-                    <input
+                    <Input
+                      id="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       name="confirmPassword"
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       placeholder="Nhập lại mật khẩu mới"
-                      className="w-full pl-12 pr-12 py-3.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-black dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
+                      className="pl-10 pr-10"
                     />
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() =>
                         setShowConfirmPassword(!showConfirmPassword)
                       }
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                     >
                       {showConfirmPassword ? (
-                        <EyeOff size={18} />
+                        <EyeOff className="size-4" />
                       ) : (
-                        <Eye size={18} />
+                        <Eye className="size-4" />
                       )}
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
                 {/* Password Requirements */}
-                <div className="text-xs text-neutral-500 space-y-1">
+                <div className="text-xs text-muted-foreground space-y-1">
                   <p>Mật khẩu phải:</p>
                   <ul className="list-disc list-inside space-y-0.5">
                     <li
@@ -214,17 +217,9 @@ const ResetPassword = () => {
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3.5 bg-black dark:bg-white text-white dark:text-black font-medium rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <div className="w-5 h-5 border-2 border-white/30 dark:border-black/30 border-t-white dark:border-t-black rounded-full animate-spin" />
-                  ) : (
-                    "Đặt lại mật khẩu"
-                  )}
-                </button>
+                <Button type="submit" disabled={loading} className="w-full">
+                  {loading ? <Spinner /> : "Đặt lại mật khẩu"}
+                </Button>
               </form>
             </>
           ) : (
@@ -235,10 +230,10 @@ const ResetPassword = () => {
                   className="text-green-600 dark:text-green-400"
                 />
               </div>
-              <h2 className="text-2xl font-bold text-black dark:text-white mb-2">
+              <h2 className="text-2xl font-bold text-foreground mb-2">
                 Thành công!
               </h2>
-              <p className="text-neutral-500 mb-8">
+              <p className="text-muted-foreground mb-8">
                 Mật khẩu của bạn đã được đặt lại thành công.
                 <br />
                 Bạn có thể đăng nhập với mật khẩu mới.
@@ -257,7 +252,7 @@ const ResetPassword = () => {
             <div className="mt-10 text-center">
               <Link
                 to="/auth/login"
-                className="inline-flex items-center gap-2 text-neutral-500 hover:text-black dark:hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft size={16} />
                 Quay lại đăng nhập
@@ -271,5 +266,3 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
-
-

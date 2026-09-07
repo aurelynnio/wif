@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import {
   Home,
   MessageCircle,
@@ -17,10 +17,11 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { logout } from '@/redux/actions/authActions';
 import { notify } from '@/utils/notify';
 import { useUnreadCount } from '@/hooks/useNotificationQuery';
 import { useUnreadMessagesCount } from '@/hooks/useMessageQuery';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 // Custom Nav Item
 const NavItem = ({
@@ -77,9 +78,8 @@ const NavItem = ({
 };
 
 export default function Navigate({ mobile = false, onCollapsedChange }) {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user } = useSelector(state => state.auth);
+  const { user, logout } = useAuthStore();
   /* State */
   const [collapsed, setCollapsed] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -91,12 +91,12 @@ export default function Navigate({ mobile = false, onCollapsedChange }) {
   const DEFAULT_USER = {
     name: 'Người dùng',
     username: 'user',
-    avatar: 'https://via.placeholder.com/40',
+    avatar: '',
   };
 
   /* Handlers */
   const handleLogout = async () => {
-    await dispatch(logout());
+    await logout();
     notify.success('Đăng xuất thành công');
     navigate('/auth/login');
   };
@@ -152,15 +152,15 @@ export default function Navigate({ mobile = false, onCollapsedChange }) {
             className={({ isActive }) =>
               `relative flex flex-col items-center justify-center p-2 rounded-full transition-all ${
                 isActive
-                  ? 'text-black dark:text-white'
-                  : 'text-neutral-400 hover:text-black dark:hover:text-white'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
               }`
             }
           >
             {({ isActive }) => (
               <>
                 {isActive && (
-                  <div className="absolute -top-1 w-6 h-0.5 rounded-full bg-black dark:bg-white" />
+                  <div className="absolute -top-1 w-6 h-0.5 rounded-full bg-primary" />
                 )}
                 <div className="relative">
                   <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
@@ -200,17 +200,16 @@ export default function Navigate({ mobile = false, onCollapsedChange }) {
       </Link>
 
       {/* Collapse Toggle */}
-      <button
+      <Button
+        type="button"
         onClick={toggleSidebar}
-        className="mb-4 p-2 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all self-center"
+        variant="ghost"
+        size="icon"
+        className="mb-4 self-center rounded-full bg-neutral-100 text-muted-foreground hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
         title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        {collapsed ? (
-          <ChevronRight size={16} className="text-neutral-500" />
-        ) : (
-          <ChevronLeft size={16} className="text-neutral-500" />
-        )}
-      </button>
+        {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+      </Button>
 
       {/* Navigation */}
       <nav className="flex flex-col gap-1 flex-1">
@@ -233,98 +232,113 @@ export default function Navigate({ mobile = false, onCollapsedChange }) {
           collapsed={collapsed}
         />
 
-        {/* Theme Toggle */}
+        {/* Theme Toggle - Aligned with NavItem */}
         <button
           type="button"
           onClick={toggleTheme}
-          onKeyDown={event => {
-            if (event.key === 'Escape') {
-              event.currentTarget.blur();
-            }
-          }}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-full transition-all cursor-pointer text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-black dark:hover:text-white ${
-            collapsed ? 'justify-center px-2' : ''
-          }`}
           title={
             collapsed ? (isDarkMode ? 'Light mode' : 'Dark mode') : undefined
           }
           aria-label={
             isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'
           }
+          className="group w-full text-left focus:outline-none"
         >
-          <div className="flex-shrink-0">
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+          <div
+            className={`${
+              collapsed
+                ? 'relative flex items-center justify-center w-10 h-10 mx-auto rounded-full transition-all overflow-hidden'
+                : 'relative flex items-center gap-3 px-3 py-2.5 rounded-full transition-all w-full overflow-hidden'
+            } text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-black dark:hover:text-white`}
+          >
+            <div className="relative z-10 flex-shrink-0">
+              {isDarkMode ? (
+                <Sun size={20} strokeWidth={2} />
+              ) : (
+                <Moon size={20} strokeWidth={2} />
+              )}
+            </div>
+            {!collapsed && (
+              <span className="relative z-10 text-sm truncate font-normal">
+                {isDarkMode ? 'Light mode' : 'Dark mode'}
+              </span>
+            )}
           </div>
-          {!collapsed && (
-            <span className="text-sm">
-              {isDarkMode ? 'Light mode' : 'Dark mode'}
-            </span>
-          )}
         </button>
 
         {/* Create Post Button */}
         {collapsed ? (
-          <button
-            className="mt-6 w-10 h-10 rounded-full bg-primary flex items-center justify-center mx-auto hover:opacity-80 transition-opacity"
+          <Button
+            variant="default"
+            size="icon"
+            className="mt-6 mx-auto h-10 w-10 rounded-full hover:opacity-80"
             title="Create Post"
           >
-            <PenSquare size={18} className="text-primary-foreground" />
-          </button>
+            <PenSquare size={18} />
+          </Button>
         ) : (
-          <button className="mt-6 flex items-center justify-center gap-2 py-2.5 px-4 w-full bg-primary text-primary-foreground rounded-full font-medium text-sm hover:opacity-90 transition-opacity">
-            <PenSquare size={16} />
+          <Button
+            variant="default"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 font-medium text-sm hover:opacity-90"
+          >
+            <PenSquare data-icon="inline-start" size={16} />
             <span>Create Post</span>
-          </button>
+          </Button>
         )}
       </nav>
 
       {/* User Profile Card */}
-      <div className="mt-auto pt-4">
+      <div className="mt-auto pt-4 border-t border-neutral-100 dark:border-neutral-800/80">
         <div
-          className={`flex items-center gap-3 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all group ${
-            collapsed ? 'justify-center' : ''
+          className={`flex items-center gap-3 p-2 rounded-2xl hover:bg-neutral-100 dark:hover:bg-neutral-800/80 transition-all group ${
+            collapsed ? 'justify-center p-1.5' : ''
           }`}
           title={collapsed ? user?.name || DEFAULT_USER.name : undefined}
         >
           <Link to="/profile" className="relative flex-shrink-0">
-            <img
-              src={user?.avatar || DEFAULT_USER.avatar}
-              alt="Profile"
-              className="w-10 h-10 rounded-full object-cover"
-            />
-            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full" />
+            <Avatar className="size-10 ring-2 ring-neutral-200 dark:ring-neutral-700 transition-transform group-hover:scale-105">
+              <AvatarImage
+                src={user?.avatar || undefined}
+                alt={user?.name || DEFAULT_USER.name}
+              />
+              <AvatarFallback className="bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-800 dark:to-neutral-700 text-neutral-800 dark:text-neutral-200 font-semibold text-sm">
+                {(user?.name || DEFAULT_USER.name).charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-neutral-900" />
           </Link>
           {!collapsed && (
             <>
               <Link to="/profile" className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-black dark:text-white truncate leading-tight">
+                <p className="text-sm font-semibold text-black dark:text-white truncate leading-tight group-hover:text-primary transition-colors">
                   {user?.name || DEFAULT_USER.name}
                 </p>
-                <p className="text-xs text-neutral-500 truncate leading-tight mt-0.5">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate leading-tight mt-0.5">
                   @{user?.username || DEFAULT_USER.username}
                 </p>
               </Link>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleLogout}
-                className="p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                className="rounded-full size-8 text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                 title="Đăng xuất"
               >
-                <LogOut
-                  size={16}
-                  className="text-neutral-400 hover:text-red-500"
-                />
-              </button>
+                <LogOut size={16} />
+              </Button>
             </>
           )}
         </div>
         {collapsed && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleLogout}
-            className="w-full mt-2 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex justify-center"
+            className="mt-2 flex size-10 mx-auto justify-center rounded-full text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
             title="Đăng xuất"
           >
-            <LogOut size={18} className="text-neutral-400 hover:text-red-500" />
-          </button>
+            <LogOut size={18} />
+          </Button>
         )}
       </div>
     </div>

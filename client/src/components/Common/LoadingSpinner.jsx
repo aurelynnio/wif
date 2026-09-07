@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 const LoadingSpinner = ({
   fullScreen = false,
@@ -7,25 +7,29 @@ const LoadingSpinner = ({
   text = '',
 }) => {
   const sizeMap = {
-    xs: 14,
-    sm: 20,
-    md: 32,
-    lg: 48,
-    xl: 64,
+    xs: 'sm',
+    sm: 'sm',
+    md: 'md',
+    lg: 'lg',
+    xl: 'lg',
   };
 
   const spinnerContent = (
     <div
       className={`flex flex-col items-center justify-center gap-3 ${className}`}
+      aria-live="polite"
+      aria-busy="true"
     >
-      <Loader2 size={sizeMap[size]} className="animate-spin text-neutral-400" />
-      {text && <p className="text-neutral-500 text-sm font-medium">{text}</p>}
+      <Spinner size={sizeMap[size]} className="text-muted-foreground" />
+      {text && (
+        <p className="text-muted-foreground text-sm font-medium">{text}</p>
+      )}
     </div>
   );
 
   if (fullScreen) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 dark:bg-black/80 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
         {spinnerContent}
       </div>
     );

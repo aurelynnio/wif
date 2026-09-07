@@ -8,6 +8,10 @@ import {
   useUnmuteUser,
 } from '@/hooks/useUserQuery';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const BlockedMutedSettings = () => {
   const { data: blockedUsers, isLoading: blockedLoading } = useBlockedUsers();
@@ -57,7 +61,7 @@ const BlockedMutedSettings = () => {
     ) || [];
 
   const UserItem = ({ user, type }) => (
-    <div className="flex items-center justify-between p-3 rounded-xl bg-neutral-100/50 dark:bg-neutral-800/40 hover:bg-neutral-200/50 dark:hover:bg-neutral-700/60 transition-colors">
+    <div className="flex items-center justify-between p-3 rounded-xl bg-muted hover:bg-muted/70 transition-colors">
       <div className="flex items-center gap-3">
         <img
           src={user.avatar || '/images/default-avatar.png'}
@@ -65,26 +69,23 @@ const BlockedMutedSettings = () => {
           className="w-10 h-10 rounded-full object-cover"
         />
         <div>
-          <p className="text-sm font-medium text-content dark:text-white">
+          <p className="text-sm font-medium text-foreground">
             {user.fullName || user.username}
           </p>
-          <p className="text-xs text-neutral-500">@{user.username}</p>
+          <p className="text-xs text-muted-foreground">@{user.username}</p>
         </div>
       </div>
-      <button
+      <Button
+        variant={type === 'blocked' ? 'destructive' : 'secondary'}
         onClick={() =>
           type === 'blocked'
             ? handleUnblock(user.id || user._id)
             : handleUnmute(user.id || user._id)
         }
-        className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-          type === 'blocked'
-            ? 'text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50'
-            : 'text-amber-600 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/30 dark:hover:bg-amber-900/50'
-        }`}
+        size="sm"
       >
         {type === 'blocked' ? 'Bỏ chặn' : 'Bỏ ẩn'}
-      </button>
+      </Button>
     </div>
   );
 
@@ -99,56 +100,40 @@ const BlockedMutedSettings = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-content dark:text-white mb-2">
+        <h1 className="text-2xl font-bold text-foreground mb-2">
           Người dùng bị chặn & ẩn
         </h1>
-        <p className="text-neutral-500 text-sm">
+        <p className="text-muted-foreground text-sm">
           Quản lý danh sách người dùng bạn đã chặn hoặc ẩn
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 bg-neutral-100/40 dark:bg-neutral-800/40 p-1 rounded-xl">
-        <button
-          onClick={() => setActiveTab('blocked')}
-          className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
-            activeTab === 'blocked'
-              ? 'bg-white dark:bg-neutral-900 shadow-sm text-primary rounded-lg'
-              : 'text-neutral-500 hover:text-content dark:hover:text-white'
-          }`}
-        >
-          <div className="flex items-center gap-2">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full">
+          <TabsTrigger value="blocked" className="w-full">
             <Ban size={16} />
             <span>Đã chặn ({blockedUsers?.length || 0})</span>
-          </div>
-        </button>
-        <button
-          onClick={() => setActiveTab('muted')}
-          className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
-            activeTab === 'muted'
-              ? 'bg-white dark:bg-neutral-900 shadow-sm text-primary rounded-lg'
-              : 'text-neutral-500 hover:text-content dark:hover:text-white'
-          }`}
-        >
-          <div className="flex items-center gap-2">
+          </TabsTrigger>
+          <TabsTrigger value="muted" className="w-full">
             <VolumeX size={16} />
             <span>Đã ẩn ({mutedUsers?.length || 0})</span>
-          </div>
-        </button>
-      </div>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Search */}
       <div className="relative">
         <Search
           size={18}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
         />
-        <input
+        <Input
           type="text"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           placeholder="Tìm kiếm người dùng..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-content dark:text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="pl-10"
         />
       </div>
 
@@ -161,10 +146,10 @@ const BlockedMutedSettings = () => {
             ))
           ) : (
             <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                <UserX className="w-8 h-8 text-neutral-400" />
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                <UserX className="w-8 h-8 text-muted-foreground" />
               </div>
-              <p className="text-neutral-500 text-sm">
+              <p className="text-muted-foreground text-sm">
                 {searchQuery ? 'Không tìm thấy người dùng' : 'Chưa chặn ai'}
               </p>
             </div>
@@ -175,10 +160,10 @@ const BlockedMutedSettings = () => {
           ))
         ) : (
           <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-              <VolumeX className="w-8 h-8 text-neutral-400" />
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+              <VolumeX className="w-8 h-8 text-muted-foreground" />
             </div>
-            <p className="text-neutral-500 text-sm">
+            <p className="text-muted-foreground text-sm">
               {searchQuery ? 'Không tìm thấy người dùng' : 'Chưa ẩn ai'}
             </p>
           </div>
@@ -186,17 +171,15 @@ const BlockedMutedSettings = () => {
       </div>
 
       {/* Info Section */}
-      <div className="p-4 rounded-2xl bg-neutral-100/30 dark:bg-neutral-800/20">
-        <h4 className="text-sm font-medium text-content dark:text-white mb-2">
+      <Card className="p-4">
+        <h4 className="text-sm font-medium text-foreground mb-2">
           Sự khác biệt giữa Chặn và Ẩn
         </h4>
-        <div className="space-y-2 text-xs text-neutral-500">
+        <div className="space-y-2 text-xs text-muted-foreground">
           <div className="flex items-start gap-2">
-            <Ban size={14} className="mt-0.5 text-red-500" />
+            <Ban size={14} className="mt-0.5 text-destructive" />
             <p>
-              <span className="font-medium text-content dark:text-white">
-                Chặn:
-              </span>{' '}
+              <span className="font-medium text-foreground">Chặn:</span>{' '}
               Người dùng không thể xem profile, gửi tin nhắn hoặc tương tác với
               bạn.
             </p>
@@ -204,15 +187,13 @@ const BlockedMutedSettings = () => {
           <div className="flex items-start gap-2">
             <VolumeX size={14} className="mt-0.5 text-amber-500" />
             <p>
-              <span className="font-medium text-content dark:text-white">
-                Ẩn:
-              </span>{' '}
+              <span className="font-medium text-foreground">Ẩn:</span>{' '}
               Bài viết của người dùng sẽ không hiển thị trong feed của bạn,
               nhưng họ vẫn có thể tương tác.
             </p>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };

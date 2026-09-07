@@ -8,11 +8,15 @@ import {
   Loader2,
   Map as MapIcon,
 } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import { useProfile, useUpdateProfile } from '@/hooks/useUserQuery';
 import { notify } from '@/utils/notify';
 import { Suspense, lazy } from 'react';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 const LocationPickerModal = lazy(() =>
   import('@/components/Common/LocationPickerModal')
@@ -31,33 +35,29 @@ const InputField = ({
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-content dark:text-white">
-        {label}
-      </label>
+      <Label>{label}</Label>
       <div className="relative">
         {!multiline && Icon && (
           <Icon
             size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
           />
         )}
         {multiline ? (
-          <textarea
+          <Textarea
             value={value}
             onChange={onChange}
             placeholder={placeholder}
             rows={3}
-            className="w-full px-4 py-2.5 rounded-2xl bg-neutral-100/50 dark:bg-neutral-800/40 text-content dark:text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+            className="resize-none"
           />
         ) : (
-          <input
+          <Input
             type="text"
             value={value}
             onChange={onChange}
             placeholder={placeholder}
-            className={`w-full pl-10 ${
-              rightElement ? 'pr-12' : 'pr-4'
-            } py-2.5 rounded-2xl bg-neutral-100/50 dark:bg-neutral-800/40 text-content dark:text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40`}
+            className={`pl-10 ${rightElement ? 'pr-12' : 'pr-4'}`}
           />
         )}
         {rightElement && (
@@ -73,7 +73,7 @@ const InputField = ({
 const ProfileSettings = () => {
   const fileInputRef = useRef(null);
   const coverInputRef = useRef(null);
-  const { user } = useSelector(state => state.auth);
+  const user = useAuthStore(state => state.user);
 
   // React Query hooks
   const { data: currentProfile, isLoading: profileLoading } = useProfile(
@@ -184,10 +184,10 @@ const ProfileSettings = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-content dark:text-white mb-2">
+        <h1 className="text-2xl font-bold text-foreground mb-2">
           Edit Profile
         </h1>
-        <p className="text-neutral-500 text-sm">
+        <p className="text-muted-foreground text-sm">
           Update your profile information
         </p>
       </div>
@@ -195,7 +195,7 @@ const ProfileSettings = () => {
       {/* Cover & Avatar */}
       <div className="space-y-4">
         {/* Cover */}
-        <div className="relative h-32 rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+        <div className="relative h-32 rounded-2xl overflow-hidden bg-muted">
           <img
             src={
               coverPreview ||
@@ -242,12 +242,13 @@ const ProfileSettings = () => {
               <Camera size={20} className="text-white" />
             </button>
           </div>
-          <button
+          <Button
+            variant="secondary"
             onClick={() => fileInputRef.current?.click()}
-            className="px-4 py-2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-content dark:text-white text-sm font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+            className="rounded-full"
           >
             Change Photo
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -292,7 +293,7 @@ const ProfileSettings = () => {
             <button
               type="button"
               onClick={() => setIsLocationPickerOpen(true)}
-              className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-500 hover:text-primary transition-colors"
+              className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
               title="Pick from map"
             >
               <MapIcon size={18} />
@@ -303,14 +304,14 @@ const ProfileSettings = () => {
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <button
+        <Button
           onClick={handleSave}
           disabled={isSaving}
-          className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+          className="rounded-full px-6"
         >
           {isSaving && <Loader2 size={16} className="animate-spin" />}
           {isSaving ? 'Saving...' : 'Save Changes'}
-        </button>
+        </Button>
       </div>
 
       {/* Modals */}

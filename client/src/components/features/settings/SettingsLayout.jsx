@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom';
+import { Card } from '@/components/ui/card';
 import SideBarSettings from './SideBarSettings';
 
 const SettingsLayout = () => {
@@ -12,14 +13,14 @@ const SettingsLayout = () => {
 
         {/* Content */}
         <div className="lg:col-span-3 lg:h-full min-h-[calc(100vh-120px)]">
-          <div className="bg-neutral-50/50 dark:bg-neutral-800/20 rounded-2xl lg:h-full min-h-[calc(100vh-120px)] flex flex-col overflow-hidden">
+          <Card className="bg-muted rounded-2xl lg:h-full min-h-[calc(100vh-120px)] flex flex-col overflow-hidden">
             <div
               className="p-6 overflow-y-auto flex-1"
               style={{ scrollbarGutter: 'stable' }}
             >
               <Outlet />
             </div>
-          </div>
+          </Card>
         </div>
       </div>
     </div>

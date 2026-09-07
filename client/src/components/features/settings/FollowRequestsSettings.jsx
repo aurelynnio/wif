@@ -14,6 +14,9 @@ import {
   useRejectFollowRequest,
 } from '@/hooks/useUserQuery';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 const FollowRequestsSettings = () => {
   const { data: followRequests, isLoading: loading } = useFollowRequests();
@@ -84,10 +87,10 @@ const FollowRequestsSettings = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-content dark:text-white mb-2">
+        <h1 className="text-2xl font-bold text-foreground mb-2">
           Yêu cầu theo dõi
         </h1>
-        <p className="text-neutral-500 text-sm">
+        <p className="text-muted-foreground text-sm">
           Quản lý các yêu cầu theo dõi từ người dùng khác
         </p>
       </div>
@@ -97,14 +100,14 @@ const FollowRequestsSettings = () => {
         <div className="relative">
           <Search
             size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
           />
-          <input
+          <Input
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Tìm kiếm yêu cầu..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-content dark:text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="pl-10"
           />
         </div>
       )}
@@ -120,7 +123,7 @@ const FollowRequestsSettings = () => {
             return (
               <div
                 key={requestId}
-                className="flex items-center justify-between p-4 rounded-2xl bg-neutral-100/40 dark:bg-neutral-800/30 hover:bg-neutral-200/40 dark:hover:bg-neutral-700/40 transition-colors"
+                className="flex items-center justify-between p-4 rounded-2xl bg-muted hover:bg-muted/70 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <img
@@ -129,12 +132,12 @@ const FollowRequestsSettings = () => {
                     className="w-12 h-12 rounded-full object-cover"
                   />
                   <div>
-                    <p className="text-sm font-medium text-content dark:text-white">
+                    <p className="text-sm font-medium text-foreground">
                       {user.fullName || user.username}
                     </p>
-                    <p className="text-xs text-neutral-500">@{user.username}</p>
+                    <p className="text-xs text-muted-foreground">@{user.username}</p>
                     {request.createdAt && (
-                      <p className="text-xs text-neutral-400 mt-0.5 flex items-center gap-1">
+                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                         <Clock size={10} />
                         {formatDate(request.createdAt)}
                       </p>
@@ -143,10 +146,11 @@ const FollowRequestsSettings = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button
+                  <Button
+                    variant="default"
                     onClick={() => handleAccept(requestId)}
                     disabled={isProcessing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:opacity-80 disabled:opacity-50 transition-opacity"
+                    size="sm"
                   >
                     {isProcessing ? (
                       <Loader2 size={14} className="animate-spin" />
@@ -154,28 +158,29 @@ const FollowRequestsSettings = () => {
                       <UserCheck size={14} />
                     )}
                     Chấp nhận
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="secondary"
                     onClick={() => handleReject(requestId)}
                     disabled={isProcessing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-600 disabled:opacity-50 transition-colors"
+                    size="sm"
                   >
                     <UserX size={14} />
                     Từ chối
-                  </button>
+                  </Button>
                 </div>
               </div>
             );
           })
         ) : (
           <div className="text-center py-16">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-              <UserPlus className="w-10 h-10 text-neutral-400" />
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+              <UserPlus className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-content dark:text-white mb-1">
+            <h3 className="text-lg font-medium text-foreground mb-1">
               {searchQuery ? 'Không tìm thấy kết quả' : 'Không có yêu cầu nào'}
             </h3>
-            <p className="text-neutral-500 text-sm">
+            <p className="text-muted-foreground text-sm">
               {searchQuery
                 ? 'Thử tìm kiếm với từ khóa khác'
                 : 'Khi có người yêu cầu theo dõi bạn, họ sẽ xuất hiện ở đây'}
@@ -186,12 +191,12 @@ const FollowRequestsSettings = () => {
 
       {/* Info */}
       {followRequests?.length > 0 && (
-        <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-900/10">
+        <Card className="p-4 bg-blue-50/50 dark:bg-blue-900/10">
           <p className="text-sm text-blue-800 dark:text-blue-200">
             💡 <strong>Mẹo:</strong> Nếu bạn muốn tắt chế độ tài khoản riêng tư,
             hãy vào <strong>Cài đặt &gt; Quyền riêng tư</strong>.
           </p>
-        </div>
+        </Card>
       )}
     </div>
   );

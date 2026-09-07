@@ -3,6 +3,10 @@ import { Eye, MessageCircle, Loader2 } from 'lucide-react';
 import { notify } from '@/utils/notify';
 import { useSettings, useUpdateSettings } from '@/hooks/useUserQuery';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 const PrivacySettings = () => {
   const { data: settingsData, isLoading: settingsLoading } = useSettings();
@@ -45,29 +49,24 @@ const PrivacySettings = () => {
     label,
     description,
     disabled,
+    id,
   }) => (
     <div className="flex items-center justify-between py-4 last:border-0">
       <div>
-        <p className="text-sm font-medium text-content dark:text-white">
+        <Label
+          htmlFor={id}
+          className="text-sm font-medium text-foreground cursor-pointer"
+        >
           {label}
-        </p>
-        <p className="text-xs text-neutral-500 mt-0.5">{description}</p>
+        </Label>
+        <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
       </div>
-      <button
-        onClick={onChange}
+      <Switch
+        id={id}
+        checked={enabled}
+        onCheckedChange={onChange}
         disabled={disabled}
-        className={`relative w-11 h-6 rounded-full transition-colors ${
-          disabled ? 'opacity-50 cursor-not-allowed' : ''
-        } ${enabled ? 'bg-primary' : 'bg-neutral-200 dark:bg-neutral-700'}`}
-      >
-        <div
-          className={`absolute top-0.5 w-5 h-5 rounded-full transition-transform ${
-            enabled
-              ? 'translate-x-5 bg-primary-foreground'
-              : 'translate-x-0.5 bg-white dark:bg-neutral-400'
-          }`}
-        />
-      </button>
+      />
     </div>
   );
 
@@ -82,28 +81,21 @@ const PrivacySettings = () => {
     <div className="py-4 last:border-0">
       <div className="flex items-center justify-between mb-2">
         <div>
-          <p className="text-sm font-medium text-content dark:text-white">
-            {label}
-          </p>
-          <p className="text-xs text-neutral-500 mt-0.5">{description}</p>
+          <p className="text-sm font-medium text-foreground">{label}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
         </div>
       </div>
       <div className="flex gap-2 mt-3">
         {options.map(option => (
-          <button
+          <Button
             key={option.value}
+            variant={value === option.value ? 'default' : 'secondary'}
             onClick={() => onChange(option.value)}
             disabled={disabled}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors ${
-              disabled ? 'opacity-50 cursor-not-allowed' : ''
-            } ${
-              value === option.value
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'
-            }`}
+            className="flex-1 text-xs"
           >
             {option.label}
-          </button>
+          </Button>
         ))}
       </div>
     </div>
@@ -120,24 +112,20 @@ const PrivacySettings = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-content dark:text-white mb-2">
-          Privacy
-        </h1>
-        <p className="text-neutral-500 text-sm">
+        <h1 className="text-2xl font-bold text-foreground mb-2">Privacy</h1>
+        <p className="text-muted-foreground text-sm">
           Control who can see your content and interact with you
         </p>
       </div>
 
       {/* Visibility Settings */}
-      <div className="rounded-2xl overflow-hidden bg-neutral-50/50 dark:bg-neutral-800/20">
-        <div className="px-4 py-3 bg-neutral-100/50 dark:bg-neutral-700/30">
-          <div className="flex items-center gap-2">
-            <Eye size={16} className="text-neutral-500" />
-            <h3 className="text-sm font-medium text-content dark:text-white">
-              Visibility
-            </h3>
-          </div>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Eye size={16} className="text-muted-foreground" />
+            Visibility
+          </CardTitle>
+        </CardHeader>
         <div className="p-4">
           <SelectOption
             label="Profile visibility"
@@ -164,18 +152,16 @@ const PrivacySettings = () => {
             ]}
           />
         </div>
-      </div>
+      </Card>
 
       {/* Interaction Settings */}
-      <div className="rounded-2xl overflow-hidden bg-neutral-50/50 dark:bg-neutral-800/20">
-        <div className="px-4 py-3 bg-neutral-100/50 dark:bg-neutral-700/30">
-          <div className="flex items-center gap-2">
-            <MessageCircle size={16} className="text-neutral-500" />
-            <h3 className="text-sm font-medium text-content dark:text-white">
-              Interactions
-            </h3>
-          </div>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageCircle size={16} className="text-muted-foreground" />
+            Interactions
+          </CardTitle>
+        </CardHeader>
         <div className="p-4">
           <SelectOption
             label="Message permissions"
@@ -190,6 +176,7 @@ const PrivacySettings = () => {
             ]}
           />
           <ToggleSwitch
+            id="privacy-search"
             label="Show in search results"
             description="Allow others to find you through search"
             enabled={privacy.searchVisibility}
@@ -199,6 +186,7 @@ const PrivacySettings = () => {
             disabled={updateSettingsMutation.isPending}
           />
           <ToggleSwitch
+            id="privacy-activity"
             label="Show activity status"
             description="Let others see when you're online"
             enabled={privacy.activityStatus}
@@ -208,11 +196,11 @@ const PrivacySettings = () => {
             disabled={updateSettingsMutation.isPending}
           />
         </div>
-      </div>
+      </Card>
 
       {/* Saving indicator */}
       {updateSettingsMutation.isPending && (
-        <div className="flex items-center justify-center gap-2 text-sm text-neutral-500">
+        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span>Đang lưu...</span>
         </div>

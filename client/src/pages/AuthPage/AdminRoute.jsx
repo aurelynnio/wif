@@ -1,28 +1,43 @@
-import { useEffect } from "react";
-import { useSelector } from "react-redux";
-import { useNavigate, Outlet } from "react-router-dom";
+import { useEffect } from 'react';
+import { useAuthStore } from '@/store/authStore';
+import { useNavigate, Outlet } from 'react-router-dom';
 
 const AdminRoute = () => {
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const user = useAuthStore(state => state.user);
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const hasHydrated = useAuthStore(state => state._hasHydrated);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Nếu chưa xác định tình trạng xác thực, đợi
-    if (isAuthenticated === undefined) return;
+    // Chờ persist rehydrate xong trước khi quyết định redirect
+    if (!hasHydrated) return;
 
     // Nếu chưa đăng nhập, chuyển về đăng nhập
     if (!isAuthenticated || !user) {
-      navigate("/auth/login", { replace: true });
+      navigate('/auth/login', { replace: true });
       return;
     }
 
     // Kiểm tra quyền admin
-    const isUserAdmin = user.isAdmin || user.role === "admin";
+    const isUserAdmin = user.isAdmin || user.role === 'admin';
 
     if (!isUserAdmin) {
-      navigate("/access-denied", { replace: true });
+      navigate('/access-denied', { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [hasHydrated, isAuthenticated, user, navigate]);
+
+  if (!hasHydrated) {
+    return null;
+  }
+
+  if (!isAuthenticated || !user) {
+    return null;
+  }
+
+  const isUserAdmin = user.isAdmin || user.role === 'admin';
+  if (!isUserAdmin) {
+    return null;
+  }
 
   return <Outlet />;
 };

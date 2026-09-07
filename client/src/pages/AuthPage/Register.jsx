@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   Sparkles,
   Mail,
@@ -11,17 +10,17 @@ import {
   EyeOff,
   AlertCircle,
 } from 'lucide-react';
-import { register, googleAuth } from '@/redux/actions/authActions';
-import { clearError } from '@/redux/slices/AuthSlice';
-import { useRef, useCallback } from 'react';
+import { useAuthStore } from '@/store/authStore';
 import { notify } from '@/utils/notify';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 
 const Register = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error, isAuthenticated, user } = useSelector(
-    state => state.auth
-  );
+  const { register, googleAuth, clearError, loading, error, isAuthenticated, user } =
+    useAuthStore();
   const googleButtonRef = useRef(null);
   const googleInitialized = useRef(false);
 
@@ -42,9 +41,9 @@ const Register = () => {
 
   useEffect(() => {
     return () => {
-      dispatch(clearError());
+      clearError();
     };
-  }, [dispatch]);
+  }, [clearError]);
 
   // Initialize Google Sign-In
   const renderGoogleButton = useCallback(() => {
@@ -71,8 +70,8 @@ const Register = () => {
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
         callback: async response => {
           if (response.credential) {
-            const result = await dispatch(googleAuth(response.credential));
-            if (googleAuth.fulfilled.match(result)) {
+            const result = await googleAuth(response.credential);
+            if (result.success) {
               notify.success('Đăng ký với Google thành công!');
             } else {
               notify.error('Đăng ký với Google thất bại');
@@ -83,7 +82,7 @@ const Register = () => {
     }
 
     renderGoogleButton();
-  }, [dispatch, renderGoogleButton]);
+  }, [googleAuth, renderGoogleButton]);
 
   // Setup Google button when ref is available
   useEffect(() => {
@@ -108,7 +107,6 @@ const Register = () => {
       };
     }
   }, [initGoogle]);
-
 
   useEffect(() => {
     const onResize = () => renderGoogleButton();
@@ -145,8 +143,8 @@ const Register = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const result = await dispatch(register(formData));
-    if (register.fulfilled.match(result)) {
+    const result = await register(formData);
+    if (result.success) {
       notify.success('Đăng ký thành công!');
       navigate('/');
     }
@@ -177,7 +175,7 @@ const Register = () => {
       </div>
 
       {/* Right Panel - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-5 sm:p-8 bg-white dark:bg-black">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-5 sm:p-8 bg-background">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center mb-10">
@@ -187,10 +185,10 @@ const Register = () => {
           </div>
 
           <div className="mb-10">
-            <h2 className="text-3xl font-bold text-content dark:text-white mb-2">
+            <h2 className="text-3xl font-bold text-foreground mb-2">
               Create account
             </h2>
-            <p className="text-neutral-500">
+            <p className="text-muted-foreground">
               Free forever. No credit card needed.
             </p>
           </div>
@@ -199,40 +197,38 @@ const Register = () => {
             {/* Name & Username row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-content dark:text-white">
-                  Full Name
-                </label>
+                <Label htmlFor="name">Full Name</Label>
                 <div className="relative">
                   <User
                     size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
                   />
-                  <input
+                  <Input
+                    id="name"
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="John Doe"
-                    className="w-full pl-12 pr-4 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-content dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-primary transition-colors text-sm"
+                    className="pl-10"
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-content dark:text-white">
-                  Username
-                </label>
+                <Label htmlFor="username">Username</Label>
                 <div className="relative">
                   <AtSign
                     size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
                   />
-                  <input
+                  <Input
+                    id="username"
                     type="text"
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
                     placeholder="johndoe"
-                    className="w-full pl-12 pr-4 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-content dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-primary transition-colors text-sm"
+                    className="pl-10"
                   />
                 </div>
               </div>
@@ -240,66 +236,67 @@ const Register = () => {
 
             {/* Email */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-content dark:text-white">
-                Email
-              </label>
+              <Label htmlFor="email">Email</Label>
               <div className="relative">
                 <Mail
                   size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
                 />
-                <input
+                <Input
+                  id="email"
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="name@example.com"
-                  className="w-full pl-12 pr-4 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-content dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-primary transition-colors text-sm"
+                  className="pl-10"
                 />
               </div>
             </div>
 
             {/* Password */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-content dark:text-white">
-                Password
-              </label>
+              <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Lock
                   size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
                 />
-                <input
+                <Input
+                  id="password"
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Create a strong password"
-                  className="w-full pl-12 pr-12 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-content dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-primary transition-colors text-sm"
+                  className="pl-10 pr-10"
                 />
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </Button>
               </div>
             </div>
 
             {/* Terms */}
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-muted-foreground">
               By creating an account, you agree to our{' '}
               <Link
                 to="#"
-                className="text-content dark:text-white hover:underline"
+                className="text-foreground hover:underline"
               >
                 Terms
               </Link>{' '}
               and{' '}
               <Link
                 to="#"
-                className="text-content dark:text-white hover:underline"
+                className="text-foreground hover:underline"
               >
                 Privacy Policy
               </Link>
@@ -315,23 +312,15 @@ const Register = () => {
 
 
             {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 bg-primary text-primary-foreground font-medium rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-              ) : (
-                'Create Account'
-              )}
-            </button>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? <Spinner /> : 'Create Account'}
+            </Button>
 
             {/* Divider */}
             <div className="relative flex items-center my-6">
-              <div className="flex-1 border-t border-neutral-200 dark:border-neutral-800" />
-              <span className="px-4 text-sm text-neutral-400">or</span>
-              <div className="flex-1 border-t border-neutral-200 dark:border-neutral-800" />
+              <div className="flex-1 border-t border-border" />
+              <span className="px-4 text-sm text-muted-foreground">or</span>
+              <div className="flex-1 border-t border-border" />
             </div>
 
             {/* Social Login */}
@@ -341,7 +330,7 @@ const Register = () => {
           </form>
 
           {/* Footer */}
-          <p className="mt-8 text-center text-neutral-500">
+          <p className="mt-8 text-center text-muted-foreground">
             Already have an account?{' '}
             <Link
               to="/auth/login"
@@ -357,4 +346,3 @@ const Register = () => {
 };
 
 export default Register;
-

@@ -1,18 +1,19 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { login, googleAuth } from '@/redux/actions/authActions';
+import { useAuthStore } from '@/store/authStore';
 import { notify } from '@/utils/notify';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 
 const Login = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const googleButtonRef = useRef(null);
   const googleInitialized = useRef(false);
-  const { loading, error, isAuthenticated, user } = useSelector(
-    state => state.auth
-  );
+  const { login, googleAuth, loading, error, isAuthenticated, user } =
+    useAuthStore();
 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -21,7 +22,6 @@ const Login = () => {
   });
   const [twoFactorToken, setTwoFactorToken] = useState('');
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
-
 
   // Redirect if already authenticated AND user data is loaded
   useEffect(() => {
@@ -37,9 +37,6 @@ const Login = () => {
     setRequiresTwoFactor(false);
     setTwoFactorToken('');
   }, [error]);
-
-
-  // Clear error on unmount
 
   // Initialize Google Sign-In
   const renderGoogleButton = useCallback(() => {
@@ -66,8 +63,8 @@ const Login = () => {
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
         callback: async response => {
           if (response.credential) {
-            const result = await dispatch(googleAuth(response.credential));
-            if (googleAuth.fulfilled.match(result)) {
+            const result = await googleAuth(response.credential);
+            if (result.success) {
               notify.success('Đăng nhập Google thành công!');
             } else {
               notify.error('Đăng nhập Google thất bại');
@@ -78,7 +75,7 @@ const Login = () => {
     }
 
     renderGoogleButton();
-  }, [dispatch, renderGoogleButton]);
+  }, [googleAuth, renderGoogleButton]);
 
   // Setup Google button when ref is available
   useEffect(() => {
@@ -104,7 +101,6 @@ const Login = () => {
     }
   }, [initGoogle]);
 
-
   useEffect(() => {
     const onResize = () => renderGoogleButton();
     window.addEventListener('resize', onResize);
@@ -127,13 +123,13 @@ const Login = () => {
       twoFactorToken: requiresTwoFactor ? twoFactorToken : undefined,
     };
 
-    const result = await dispatch(login(payload));
-    if (login.fulfilled.match(result)) {
+    const result = await login(payload);
+    if (result.success) {
       notify.success('Đăng nhập thành công!');
       return;
     }
 
-    const errorPayload = result.payload || {};
+    const errorPayload = result.error || {};
     if (errorPayload?.errorCode === '2FA_REQUIRED') {
       setRequiresTwoFactor(true);
       notify('Vui lòng nhập mã 2FA');
@@ -176,7 +172,7 @@ const Login = () => {
       </div>
 
       {/* Right Panel - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-5 sm:p-8 bg-white dark:bg-black">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-5 sm:p-8 bg-background">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center mb-10">
@@ -186,30 +182,29 @@ const Login = () => {
           </div>
 
           <div className="mb-10">
-            <h2 className="text-3xl font-bold text-content dark:text-white mb-2">
+            <h2 className="text-3xl font-bold text-foreground mb-2">
               Welcome back
             </h2>
-            <p className="text-neutral-500">Sign in to continue to YiBu</p>
+            <p className="text-muted-foreground">Sign in to continue to YiBu</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-content dark:text-white">
-                Email
-              </label>
+              <Label htmlFor="email">Email</Label>
               <div className="relative">
                 <Mail
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"
+                  size={20}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
                 />
-                <input
+                <Input
+                  id="email"
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="name@example.com"
-                  className="w-full pl-12 pr-4 py-3.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-content dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-primary transition-colors"
+                  className="pl-10"
                 />
               </div>
             </div>
@@ -217,52 +212,53 @@ const Login = () => {
             {/* Password */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-content dark:text-white">
-                  Password
-                </label>
+                <Label htmlFor="password">Password</Label>
                 <Link
                   to="/auth/forgot-password"
-                  className="text-sm text-neutral-500 hover:text-black dark:hover:text-white transition-colors"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Forgot?
                 </Link>
               </div>
               <div className="relative">
                 <Lock
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"
+                  size={20}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
                 />
-                <input
+                <Input
+                  id="password"
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className="w-full pl-12 pr-12 py-3.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-content dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-primary transition-colors"
+                  className="pl-10 pr-10"
                 />
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </Button>
               </div>
             </div>
 
             {requiresTwoFactor && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-content dark:text-white">
-                  Mã xác thực 2FA
-                </label>
-                <input
+                <Label htmlFor="2fa">Mã xác thực 2FA</Label>
+                <Input
+                  id="2fa"
                   type="text"
                   inputMode="numeric"
                   maxLength={6}
                   value={twoFactorToken}
                   onChange={e => setTwoFactorToken(e.target.value)}
                   placeholder="Nhập mã 6 số"
-                  className="w-full px-4 py-3.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-content dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-primary transition-colors"
+                  className="text-center"
                 />
               </div>
             )}
@@ -277,23 +273,15 @@ const Login = () => {
 
 
             {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 bg-primary text-primary-foreground font-medium rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-              ) : (
-                'Sign In'
-              )}
-            </button>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? <Spinner /> : 'Sign In'}
+            </Button>
 
             {/* Divider */}
             <div className="relative flex items-center my-8">
-              <div className="flex-1 border-t border-neutral-200 dark:border-neutral-800" />
-              <span className="px-4 text-sm text-neutral-400">or</span>
-              <div className="flex-1 border-t border-neutral-200 dark:border-neutral-800" />
+              <div className="flex-1 border-t border-border" />
+              <span className="px-4 text-sm text-muted-foreground">or</span>
+              <div className="flex-1 border-t border-border" />
             </div>
 
             {/* Google Sign-In Button */}
@@ -303,7 +291,7 @@ const Login = () => {
           </form>
 
           {/* Footer */}
-          <p className="mt-10 text-center text-neutral-500">
+          <p className="mt-10 text-center text-muted-foreground">
             Don't have an account?{' '}
             <Link
               to="/auth/register"
@@ -319,4 +307,3 @@ const Login = () => {
 };
 
 export default Login;
-

@@ -6,10 +6,19 @@ import {
   useMapEvents,
   useMap,
 } from 'react-leaflet';
-import { X, Loader2, MapPin, Search } from 'lucide-react';
+import { Loader2, MapPin, Search } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { reverseGeocode, searchLocation } from '@/api/nominatim';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 
 // Fix for default marker icon in Leaflet with Webpack/Vite
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -211,69 +220,70 @@ const LocationPickerModal = ({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-      role="dialog"
-      aria-modal="true"
-      tabIndex={-1}
-      onKeyDown={event => {
-        if (event.key === 'Escape') onClose?.();
+    <Dialog
+      open={isOpen}
+      onOpenChange={open => {
+        if (!open) onClose?.();
       }}
     >
-      <div className="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl border border-neutral-200 dark:border-neutral-800 flex flex-col max-h-[90vh]">
+      <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogTitle className="sr-only">Choose Location</DialogTitle>
+        <DialogDescription className="sr-only">
+          Interactive map to pick a location
+        </DialogDescription>
+
         {/* Header */}
-        <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-white dark:bg-neutral-900 z-10">
-          <h3 className="text-lg font-bold text-black dark:text-white flex items-center gap-2">
+        <div className="z-10 flex items-center justify-between border-b border-border bg-background p-4">
+          <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
             <MapPin className="text-primary" size={20} />
             Choose Location
           </h3>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-          >
-            <X size={20} className="text-neutral-500" />
-          </button>
         </div>
 
         {/* Search Bar */}
         <div className="p-4 bg-white dark:bg-neutral-900 z-20 relative">
           <form onSubmit={handleSearch} className="relative">
-            <input
-              type="text"
-              aria-label="Search location"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search city, country..."
-              className="w-full pl-10 pr-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-black dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
-              size={18}
-            />
-            {isSearching && (
-              <Loader2
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 animate-spin"
+            <div className="relative">
+              <Input
+                type="text"
+                aria-label="Search location"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search city, country..."
+                className="h-9 rounded-xl bg-muted/50 pl-10 pr-4"
+              />
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                 size={18}
               />
-            )}
+              {isSearching && (
+                <Loader2
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin"
+                  size={18}
+                />
+              )}
+            </div>
           </form>
 
           {/* Search Results Dropdown */}
           {searchResults.length > 0 && (
             <div className="absolute top-full left-4 right-4 mt-2 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-700 max-h-60 overflow-y-auto z-50">
               {searchResults.map(result => (
-                <button
+                <Button
                   key={result.place_id}
+                  variant="ghost"
                   onClick={() => handleSelectSearchResult(result)}
-                  className="w-full text-left px-4 py-3 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors border-b border-neutral-100 dark:border-neutral-700 last:border-0"
+                  className="h-auto w-full justify-start rounded-none px-4 py-3 text-left border-b border-border last:border-0"
                 >
-                  <p className="text-sm font-medium text-black dark:text-white truncate">
-                    {result.display_name.split(',')[0]}
-                  </p>
-                  <p className="text-xs text-neutral-500 truncate">
-                    {result.display_name}
-                  </p>
-                </button>
+                  <span className="w-full min-w-0">
+                    <span className="block text-sm font-medium text-foreground truncate">
+                      {result.display_name.split(',')[0]}
+                    </span>
+                    <span className="block text-xs text-muted-foreground truncate">
+                      {result.display_name}
+                    </span>
+                  </span>
+                </Button>
               ))}
             </div>
           )}
@@ -326,23 +336,26 @@ const LocationPickerModal = ({
           </div>
 
           <div className="flex justify-end gap-3">
-            <button
+            <Button
+              variant="ghost"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="rounded-xl text-sm font-medium"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="default"
               onClick={handleConfirm}
               disabled={!address || isLoading}
-              className="px-6 py-2 rounded-xl bg-black dark:bg-white text-white dark:text-black text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-xl px-6 text-sm font-bold"
             >
+              {isLoading && <Spinner />}
               Confirm Location
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

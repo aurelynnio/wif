@@ -7,8 +7,11 @@ import {
   useUnfollowUser,
   useCheckFollow,
 } from '@/hooks/useUserQuery';
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 const UserProfilePreview = ({ userId, children, triggerSelector }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,7 +21,7 @@ const UserProfilePreview = ({ userId, children, triggerSelector }) => {
   const timeoutRef = useRef(null);
   const openTimeoutRef = useRef(null);
   const hasMovedRef = useRef(false);
-  const authUser = useSelector(state => state.auth.user);
+  const authUser = useAuthStore(state => state.user);
   const isMe = authUser?._id === userId;
 
   // Fetch full user details when hovered
@@ -141,18 +144,23 @@ const UserProfilePreview = ({ userId, children, triggerSelector }) => {
               {/* Sidebar */}
               <div className="w-[110px] sm:w-[140px] bg-neutral-50 dark:bg-neutral-900 border-r border-neutral-100 dark:border-neutral-800 flex flex-col items-center pt-6 p-4">
                 <div className="relative mb-4">
-                  <img
-                    src={user?.avatar || '/images/default-avatar.png'}
-                    alt={user?.username ? `${user.username} avatar` : 'User avatar'}
-                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-neutral-200 dark:border-neutral-700 object-cover bg-white"
-                  />
+                  <Avatar className="size-16 sm:size-20 ring-2 ring-neutral-200 dark:ring-neutral-700 shadow-md">
+                    <AvatarImage
+                      src={user?.avatar || undefined}
+                      alt={user?.name || user?.username || 'User avatar'}
+                      className="object-cover"
+                    />
+                    <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xl sm:text-2xl select-none">
+                      {(user?.name || user?.username || 'U')[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                   {user?.isOnline && (
                     <div className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-neutral-900 rounded-full" />
                   )}
                 </div>
 
                 {!isMe && (
-                  <button
+                  <Button
                     onClick={handleFollow}
                     disabled={
                       followMutation.isPending || unfollowMutation.isPending
@@ -162,14 +170,20 @@ const UserProfilePreview = ({ userId, children, triggerSelector }) => {
                         event.currentTarget.blur();
                       }
                     }}
-                    className={`w-full py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                    className={`w-full h-auto py-1.5 rounded-lg text-xs font-semibold ${
                       followStatus?.isFollowing
                         ? 'bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-300 dark:hover:bg-neutral-700'
                         : 'bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200'
                     }`}
                   >
-                    {followStatus?.isFollowing ? 'Following' : 'Follow'}
-                  </button>
+                    {followMutation.isPending || unfollowMutation.isPending ? (
+                      <Spinner />
+                    ) : followStatus?.isFollowing ? (
+                      'Following'
+                    ) : (
+                      'Follow'
+                    )}
+                  </Button>
                 )}
               </div>
 

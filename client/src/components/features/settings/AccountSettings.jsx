@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   User,
   Mail,
@@ -10,13 +9,16 @@ import {
   LogOut,
   Monitor,
 } from 'lucide-react';
-import { logout, logoutAll, updatePassword } from '@/redux/actions/authActions';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuthStore } from '@/store/authStore';
 import { notify } from '@/utils/notify';
 
 const AccountSettings = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user: authUser } = useSelector(state => state.auth);
+  const { user: authUser, logout, logoutAll, updatePassword } = useAuthStore();
 
   // Use authUser or empty object
   const profile = authUser || {};
@@ -37,16 +39,16 @@ const AccountSettings = () => {
   const [loading, setLoading] = useState(false);
 
   const handleLogout = async () => {
-    const result = await dispatch(logout());
-    if (logout.fulfilled.match(result)) {
+    const result = await logout();
+    if (result.success) {
       notify.success('Đăng xuất thành công');
       navigate('/auth/login');
     }
   };
 
   const handleLogoutAll = async () => {
-    const result = await dispatch(logoutAll());
-    if (logoutAll.fulfilled.match(result)) {
+    const result = await logoutAll();
+    if (result.success) {
       notify.success('Đã đăng xuất khỏi tất cả thiết bị');
       navigate('/auth/login');
     }
@@ -67,15 +69,13 @@ const AccountSettings = () => {
     }
 
     setLoading(true);
-    const result = await dispatch(
-      updatePassword({
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword,
-      })
-    );
+    const result = await updatePassword({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
+    });
     setLoading(false);
 
-    if (updatePassword.fulfilled.match(result)) {
+    if (result.success) {
       notify.success('Đổi mật khẩu thành công. Vui lòng đăng nhập lại');
       setShowPasswordModal(false);
       setPasswordData({
@@ -96,20 +96,18 @@ const AccountSettings = () => {
     placeholder,
   }) => (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-content dark:text-white">
-        {label}
-      </label>
+      <Label>{label}</Label>
       <div className="relative">
         <Icon
           size={18}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
         />
-        <input
+        <Input
           type={type}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-content dark:text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="pl-10"
         />
       </div>
     </div>
@@ -118,24 +116,20 @@ const AccountSettings = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-content dark:text-white mb-2">
-          Account
-        </h1>
-        <p className="text-neutral-500 text-sm">
+        <h1 className="text-2xl font-bold text-foreground mb-2">Account</h1>
+        <p className="text-muted-foreground text-sm">
           Manage your account information and security
         </p>
       </div>
 
       {/* Account Info */}
-      <div className="rounded-2xl overflow-hidden bg-neutral-50/50 dark:bg-neutral-800/20">
-        <div className="px-4 py-3 bg-neutral-100/50 dark:bg-neutral-700/30">
-          <div className="flex items-center gap-2">
-            <User size={16} className="text-neutral-500" />
-            <h3 className="text-sm font-medium text-content dark:text-white">
-              Account Information
-            </h3>
-          </div>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User size={16} className="text-muted-foreground" />
+            Account Information
+          </CardTitle>
+        </CardHeader>
         <div className="p-4 space-y-4">
           <InputField
             icon={User}
@@ -153,128 +147,124 @@ const AccountSettings = () => {
             placeholder="Enter email"
           />
         </div>
-      </div>
+      </Card>
 
       {/* Security */}
-      <div className="rounded-2xl overflow-hidden bg-neutral-50/50 dark:bg-neutral-800/20">
-        <div className="px-4 py-3 bg-neutral-100/50 dark:bg-neutral-700/30">
-          <div className="flex items-center gap-2">
-            <Shield size={16} className="text-neutral-500" />
-            <h3 className="text-sm font-medium text-content dark:text-white">
-              Security
-            </h3>
-          </div>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield size={16} className="text-muted-foreground" />
+            Security
+          </CardTitle>
+        </CardHeader>
         <div className="p-4 space-y-4">
-          <button
+          <Button
+            variant="secondary"
             onClick={() => setShowPasswordModal(true)}
-            className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            className="w-full h-auto justify-between"
           >
             <div className="flex items-center gap-3">
-              <Lock size={18} className="text-neutral-500" />
+              <Lock size={18} className="text-muted-foreground" />
               <div className="text-left">
-                <p className="text-sm font-medium text-content dark:text-white">
+                <p className="text-sm font-medium text-foreground">
                   Change Password
                 </p>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   Update your password regularly for security
                 </p>
               </div>
             </div>
-            <span className="text-xs text-neutral-400">→</span>
-          </button>
+            <span className="text-xs text-muted-foreground">→</span>
+          </Button>
 
-          <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+          <div className="w-full flex items-center justify-between p-3 rounded-xl">
             <div className="flex items-center gap-3">
-              <Shield size={18} className="text-neutral-500" />
+              <Shield size={18} className="text-muted-foreground" />
               <div className="text-left">
-                <p className="text-sm font-medium text-content dark:text-white">
+                <p className="text-sm font-medium text-foreground">
                   Two-Factor Authentication
                 </p>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   Add an extra layer of security
                 </p>
               </div>
             </div>
-            <span className="text-xs px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded-full text-neutral-500">
+            <span className="text-xs px-2 py-0.5 bg-muted rounded-full text-muted-foreground">
               Off
             </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Session Management */}
-      <div className="rounded-2xl overflow-hidden bg-neutral-50/50 dark:bg-neutral-800/20">
-        <div className="px-4 py-3 bg-neutral-100/50 dark:bg-neutral-700/30">
-          <div className="flex items-center gap-2">
-            <Monitor size={16} className="text-neutral-500" />
-            <h3 className="text-sm font-medium text-content dark:text-white">
-              Sessions
-            </h3>
           </div>
         </div>
+      </Card>
+
+      {/* Session Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Monitor size={16} className="text-muted-foreground" />
+            Sessions
+          </CardTitle>
+        </CardHeader>
         <div className="p-4 space-y-4">
-          <button
+          <Button
+            variant="secondary"
             onClick={handleLogout}
-            className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            className="w-full h-auto justify-between"
           >
             <div className="flex items-center gap-3">
-              <LogOut size={18} className="text-neutral-500" />
+              <LogOut size={18} className="text-muted-foreground" />
               <div className="text-left">
-                <p className="text-sm font-medium text-content dark:text-white">
-                  Logout
-                </p>
-                <p className="text-xs text-neutral-500">
+                <p className="text-sm font-medium text-foreground">Logout</p>
+                <p className="text-xs text-muted-foreground">
                   Sign out from this device
                 </p>
               </div>
             </div>
-            <span className="text-xs text-neutral-400">→</span>
-          </button>
+            <span className="text-xs text-muted-foreground">→</span>
+          </Button>
 
-          <button
+          <Button
+            variant="secondary"
             onClick={handleLogoutAll}
-            className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            className="w-full h-auto justify-between"
           >
             <div className="flex items-center gap-3">
-              <Monitor size={18} className="text-red-500" />
+              <Monitor size={18} className="text-destructive" />
               <div className="text-left">
-                <p className="text-sm font-medium text-content dark:text-white">
+                <p className="text-sm font-medium text-foreground">
                   Logout from all devices
                 </p>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   Sign out from all your active sessions
                 </p>
               </div>
             </div>
-            <span className="text-xs text-neutral-400">→</span>
-          </button>
+            <span className="text-xs text-muted-foreground">→</span>
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {/* Danger Zone */}
-      <div className="rounded-2xl overflow-hidden bg-red-50/30 dark:bg-red-900/10">
-        <div className="px-4 py-3 bg-red-50/50 dark:bg-red-900/20">
-          <div className="flex items-center gap-2">
-            <Trash2 size={16} className="text-red-500" />
-            <h3 className="text-sm font-medium text-red-600 dark:text-red-400">
-              Danger Zone
-            </h3>
-          </div>
-        </div>
+      <Card className="bg-destructive/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <Trash2 size={16} />
+            Danger Zone
+          </CardTitle>
+        </CardHeader>
         <div className="p-4">
-          <button
+          <Button
+            variant="destructive"
             onClick={() => setShowDeleteModal(true)}
-            className="w-full py-2.5 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+            className="w-full"
           >
             Delete Account
-          </button>
-          <p className="text-xs text-neutral-500 mt-2 text-center">
+          </Button>
+          <p className="text-xs text-muted-foreground mt-2 text-center">
             This action cannot be undone. All your data will be permanently
             deleted.
           </p>
         </div>
-      </div>
+      </Card>
 
       {/* Delete Modal */}
       {showDeleteModal && (
@@ -283,26 +273,27 @@ const AccountSettings = () => {
           onClick={() => setShowDeleteModal(false)}
         >
           <div
-            className="w-full max-w-sm mx-4 bg-white dark:bg-neutral-900 rounded-2xl p-6"
+            className="w-full max-w-sm mx-4 bg-background rounded-2xl p-6"
             onClick={e => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold text-content dark:text-white mb-2">
+            <h3 className="text-lg font-bold text-foreground mb-2">
               Delete Account?
             </h3>
-            <p className="text-sm text-neutral-500 mb-6">
+            <p className="text-sm text-muted-foreground mb-6">
               Are you sure you want to delete your account? This action cannot
               be undone.
             </p>
             <div className="flex gap-3">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 py-2.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-content dark:text-white text-sm font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                className="flex-1"
               >
                 Cancel
-              </button>
-              <button className="flex-1 py-2.5 rounded-full bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors">
+              </Button>
+              <Button variant="destructive" className="flex-1">
                 Delete
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -315,18 +306,16 @@ const AccountSettings = () => {
           onClick={() => setShowPasswordModal(false)}
         >
           <div
-            className="w-full max-w-md mx-4 bg-white dark:bg-neutral-900 rounded-2xl p-6"
+            className="w-full max-w-md mx-4 bg-background rounded-2xl p-6"
             onClick={e => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold text-content dark:text-white mb-4">
+            <h3 className="text-lg font-bold text-foreground mb-4">
               Đổi mật khẩu
             </h3>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-content dark:text-white">
-                  Mật khẩu hiện tại
-                </label>
-                <input
+                <Label>Mật khẩu hiện tại</Label>
+                <Input
                   type="password"
                   value={passwordData.currentPassword}
                   onChange={e =>
@@ -336,14 +325,11 @@ const AccountSettings = () => {
                     })
                   }
                   placeholder="Nhập mật khẩu hiện tại"
-                  className="w-full px-4 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-content dark:text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-content dark:text-white">
-                  Mật khẩu mới
-                </label>
-                <input
+                <Label>Mật khẩu mới</Label>
+                <Input
                   type="password"
                   value={passwordData.newPassword}
                   onChange={e =>
@@ -353,14 +339,11 @@ const AccountSettings = () => {
                     })
                   }
                   placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)"
-                  className="w-full px-4 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-content dark:text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-content dark:text-white">
-                  Xác nhận mật khẩu mới
-                </label>
-                <input
+                <Label>Xác nhận mật khẩu mới</Label>
+                <Input
                   type="password"
                   value={passwordData.confirmPassword}
                   onChange={e =>
@@ -370,12 +353,12 @@ const AccountSettings = () => {
                     })
                   }
                   placeholder="Nhập lại mật khẩu mới"
-                  className="w-full px-4 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-content dark:text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => {
                   setShowPasswordModal(false);
                   setPasswordData({
@@ -384,21 +367,21 @@ const AccountSettings = () => {
                     confirmPassword: '',
                   });
                 }}
-                className="flex-1 py-2.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-content dark:text-white text-sm font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                className="flex-1"
               >
                 Hủy
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleUpdatePassword}
                 disabled={loading}
-                className="flex-1 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center"
+                className="flex-1"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 dark:border-black/30 border-t-white dark:border-t-black rounded-full animate-spin" />
                 ) : (
                   'Xác nhận'
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -11,6 +11,9 @@ import {
 import { notify } from '@/utils/notify';
 import { useSettings, useUpdateSettings } from '@/hooks/useUserQuery';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 
 const NotificationSettings = () => {
   const { data: settingsData, isLoading: settingsLoading } = useSettings();
@@ -67,22 +70,13 @@ const NotificationSettings = () => {
     }
   };
 
-  const ToggleSwitch = ({ enabled, onChange, disabled }) => (
-    <button
-      onClick={onChange}
+  const ToggleSwitch = ({ enabled, onChange, disabled, id }) => (
+    <Switch
+      id={id}
+      checked={enabled}
+      onCheckedChange={onChange}
       disabled={disabled}
-      className={`relative w-11 h-6 rounded-full transition-colors ${
-        disabled ? 'opacity-50 cursor-not-allowed' : ''
-      } ${enabled ? 'bg-primary' : 'bg-neutral-200 dark:bg-neutral-700'}`}
-    >
-      <div
-        className={`absolute top-0.5 w-5 h-5 rounded-full transition-transform ${
-          enabled
-            ? 'translate-x-5 bg-primary-foreground'
-            : 'translate-x-0.5 bg-white dark:bg-neutral-400'
-        }`}
-      />
-    </button>
+    />
   );
 
   const NotificationItem = (
@@ -90,17 +84,21 @@ const NotificationSettings = () => {
   ) => (
     <div className="flex items-center justify-between py-4 last:border-0">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-          <Icon size={18} className="text-neutral-500" />
+        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+          <Icon size={18} className="text-muted-foreground" />
         </div>
         <div>
-          <p className="text-sm font-medium text-content dark:text-white">
+          <Label
+            htmlFor={`notif-${settingKey}`}
+            className="text-sm font-medium text-foreground cursor-pointer"
+          >
             {label}
-          </p>
-          <p className="text-xs text-neutral-500">{description}</p>
+          </Label>
+          <p className="text-xs text-muted-foreground">{description}</p>
         </div>
       </div>
       <ToggleSwitch
+        id={`notif-${settingKey}`}
         enabled={notifications[settingKey]}
         onChange={() => handleToggle(settingKey)}
         disabled={updateSettingsMutation.isPending}
@@ -119,24 +117,20 @@ const NotificationSettings = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-content dark:text-white mb-2">
-          Notifications
-        </h1>
-        <p className="text-neutral-500 text-sm">
+        <h1 className="text-2xl font-bold text-foreground mb-2">Notifications</h1>
+        <p className="text-muted-foreground text-sm">
           Choose what notifications you want to receive
         </p>
       </div>
 
       {/* Activity Notifications */}
-      <div className="rounded-2xl overflow-hidden bg-neutral-50/50 dark:bg-neutral-800/20">
-        <div className="px-4 py-3 bg-neutral-100/50 dark:bg-neutral-700/30">
-          <div className="flex items-center gap-2">
-            <Bell size={16} className="text-neutral-500" />
-            <h3 className="text-sm font-medium text-content dark:text-white">
-              Activity
-            </h3>
-          </div>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell size={16} className="text-muted-foreground" />
+            Activity
+          </CardTitle>
+        </CardHeader>
         <div className="p-4">
           <NotificationItem
             icon={Heart}
@@ -169,29 +163,31 @@ const NotificationSettings = () => {
             settingKey="messages"
           />
         </div>
-      </div>
+      </Card>
 
       {/* Delivery Methods */}
-      <div className="rounded-2xl overflow-hidden bg-neutral-50/50 dark:bg-neutral-800/20">
-        <div className="px-4 py-3 bg-neutral-100/50 dark:bg-neutral-700/30">
-          <div className="flex items-center gap-2">
-            <Mail size={16} className="text-neutral-500" />
-            <h3 className="text-sm font-medium text-content dark:text-white">
-              Delivery Methods
-            </h3>
-          </div>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail size={16} className="text-muted-foreground" />
+            Delivery Methods
+          </CardTitle>
+        </CardHeader>
         <div className="p-4">
           <div className="flex items-center justify-between py-4">
             <div>
-              <p className="text-sm font-medium text-content dark:text-white">
+              <Label
+                htmlFor="notif-push"
+                className="text-sm font-medium text-foreground cursor-pointer"
+              >
                 Push Notifications
-              </p>
-              <p className="text-xs text-neutral-500">
+              </Label>
+              <p className="text-xs text-muted-foreground">
                 Receive notifications on your device
               </p>
             </div>
             <ToggleSwitch
+              id="notif-push"
               enabled={notifications.push}
               onChange={() => handleToggle('push')}
               disabled={updateSettingsMutation.isPending}
@@ -199,25 +195,29 @@ const NotificationSettings = () => {
           </div>
           <div className="flex items-center justify-between py-4">
             <div>
-              <p className="text-sm font-medium text-content dark:text-white">
+              <Label
+                htmlFor="notif-email"
+                className="text-sm font-medium text-foreground cursor-pointer"
+              >
                 Email Notifications
-              </p>
-              <p className="text-xs text-neutral-500">
+              </Label>
+              <p className="text-xs text-muted-foreground">
                 Receive notifications via email
               </p>
             </div>
             <ToggleSwitch
+              id="notif-email"
               enabled={notifications.email}
               onChange={() => handleToggle('email')}
               disabled={updateSettingsMutation.isPending}
             />
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Saving indicator */}
       {updateSettingsMutation.isPending && (
-        <div className="flex items-center justify-center gap-2 text-sm text-neutral-500">
+        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span>Đang lưu...</span>
         </div>

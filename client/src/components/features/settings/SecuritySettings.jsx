@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   Shield,
   Smartphone,
@@ -11,21 +10,26 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { notify } from '@/utils/notify';
-import {
-  enable2FA,
-  verify2FA,
-  disable2FA,
-  getSessions,
-  revokeSession,
-} from '@/redux/actions/authActions';
+import { useAuthStore } from '@/store/authStore';
 import { useSettings, useUpdateSettings } from '@/hooks/useUserQuery';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const SecuritySettings = () => {
-  const dispatch = useDispatch();
   const { data: settingsData, isLoading: settingsLoading } = useSettings();
   const updateSettingsMutation = useUpdateSettings();
-  const { sessions } = useSelector(state => state.auth);
+  const {
+    sessions,
+    enable2FA,
+    verify2FA,
+    disable2FA,
+    getSessions,
+    revokeSession,
+  } = useAuthStore();
 
   const [security, setSecurity] = useState({
     twoFactorEnabled: false,
@@ -40,8 +44,8 @@ const SecuritySettings = () => {
 
   // Load sessions on mount
   useEffect(() => {
-    dispatch(getSessions());
-  }, [dispatch]);
+    getSessions();
+  }, [getSessions]);
 
   // Sync local state with server settings
   useEffect(() => {
@@ -70,14 +74,13 @@ const SecuritySettings = () => {
   };
 
   const handleEnable2FA = async () => {
-    try {
-      const result = await dispatch(enable2FA()).unwrap();
-      // Support both direct object and nested data response formats
-      const qrCodeData = result.qrCode || result.data?.qrCode;
+    const result = await enable2FA();
+    if (result.success) {
+      const qrCodeData = result.data?.qrCode || result.data;
       setQrCode(qrCodeData);
       setShow2FAModal(true);
-    } catch (error) {
-      notify.error(error || 'Không thể bật 2FA');
+    } else {
+      notify.error(result.error || 'Không thể bật 2FA');
     }
   };
 
@@ -88,16 +91,15 @@ const SecuritySettings = () => {
     }
 
     setVerifying(true);
-    try {
-      await dispatch(verify2FA({ token: verifyCode })).unwrap();
+    const result = await verify2FA({ token: verifyCode });
+    setVerifying(false);
+    if (result.success) {
       notify.success('Đã bật xác thực hai yếu tố');
       setSecurity(prev => ({ ...prev, twoFactorEnabled: true }));
       setShow2FAModal(false);
       setVerifyCode('');
-    } catch (error) {
-      notify.error(error || 'Mã xác thực không hợp lệ');
-    } finally {
-      setVerifying(false);
+    } else {
+      notify.error(result.error || 'Mã xác thực không hợp lệ');
     }
   };
 
@@ -110,24 +112,23 @@ const SecuritySettings = () => {
       return;
     }
 
-    try {
-      await dispatch(disable2FA({ password })).unwrap();
+    const result = await disable2FA({ password });
+    if (result.success) {
       notify.success('Đã tắt xác thực hai yếu tố');
       setSecurity(prev => ({ ...prev, twoFactorEnabled: false }));
-    } catch (error) {
-      notify.error(error || 'Không thể tắt 2FA');
+    } else {
+      notify.error(result.error || 'Không thể tắt 2FA');
     }
   };
-
 
   const handleRevokeSession = async sessionId => {
     if (!window.confirm('Bạn có chắc muốn đăng xuất phiên này?')) return;
 
-    try {
-      await dispatch(revokeSession(sessionId)).unwrap();
+    const result = await revokeSession({ sessionId });
+    if (result.success) {
       notify.success('Đã đăng xuất phiên');
-    } catch (error) {
-      notify.error(error || 'Không thể đăng xuất phiên');
+    } else {
+      notify.error(result.error || 'Không thể đăng xuất phiên');
     }
   };
 
@@ -137,29 +138,24 @@ const SecuritySettings = () => {
     label,
     description,
     disabled,
+    id,
   }) => (
     <div className="flex items-center justify-between py-4 last:border-0">
       <div>
-        <p className="text-sm font-medium text-content dark:text-white">
+        <Label
+          htmlFor={id}
+          className="text-sm font-medium text-foreground cursor-pointer"
+        >
           {label}
-        </p>
-        <p className="text-xs text-neutral-500 mt-0.5">{description}</p>
+        </Label>
+        <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
       </div>
-      <button
-        onClick={onChange}
+      <Switch
+        id={id}
+        checked={enabled}
+        onCheckedChange={onChange}
         disabled={disabled}
-        className={`relative w-11 h-6 rounded-full transition-colors ${
-          disabled ? 'opacity-50 cursor-not-allowed' : ''
-        } ${enabled ? 'bg-primary' : 'bg-neutral-200 dark:bg-neutral-700'}`}
-      >
-        <div
-          className={`absolute top-0.5 w-5 h-5 rounded-full transition-transform ${
-            enabled
-              ? 'translate-x-5 bg-primary-foreground'
-              : 'translate-x-0.5 bg-white dark:bg-neutral-400'
-          }`}
-        />
-      </button>
+      />
     </div>
   );
 
@@ -174,24 +170,20 @@ const SecuritySettings = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-content dark:text-white mb-2">
-          Bảo mật
-        </h1>
-        <p className="text-neutral-500 text-sm">
+        <h1 className="text-2xl font-bold text-foreground mb-2">Bảo mật</h1>
+        <p className="text-muted-foreground text-sm">
           Quản lý bảo mật tài khoản và thiết bị tin cậy
         </p>
       </div>
 
       {/* Two-Factor Authentication */}
-      <div className="rounded-2xl overflow-hidden bg-neutral-50/50 dark:bg-neutral-800/20">
-        <div className="px-4 py-3 bg-neutral-100/50 dark:bg-neutral-700/30">
-          <div className="flex items-center gap-2">
-            <Key size={16} className="text-neutral-500" />
-            <h3 className="text-sm font-medium text-content dark:text-white">
-              Xác thực hai yếu tố (2FA)
-            </h3>
-          </div>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Key size={16} className="text-muted-foreground" />
+            Xác thực hai yếu tố (2FA)
+          </CardTitle>
+        </CardHeader>
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -199,7 +191,7 @@ const SecuritySettings = () => {
                 className={`p-2 rounded-lg ${
                   security.twoFactorEnabled
                     ? 'bg-green-50 dark:bg-green-900/20'
-                    : 'bg-neutral-100/50 dark:bg-neutral-800/40'
+                    : 'bg-muted'
                 }`}
               >
                 {security.twoFactorEnabled ? (
@@ -209,44 +201,39 @@ const SecuritySettings = () => {
                 )}
               </div>
               <div>
-                <p className="text-sm font-medium text-content dark:text-white">
+                <p className="text-sm font-medium text-foreground">
                   {security.twoFactorEnabled ? 'Đã bật 2FA' : 'Chưa bật 2FA'}
                 </p>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   {security.twoFactorEnabled
                     ? 'Tài khoản của bạn được bảo vệ'
                     : 'Bật để tăng cường bảo mật'}
                 </p>
               </div>
             </div>
-            <button
+            <Button
+              variant={security.twoFactorEnabled ? 'destructive' : 'default'}
               onClick={
                 security.twoFactorEnabled ? handleDisable2FA : handleEnable2FA
               }
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                security.twoFactorEnabled
-                  ? 'bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50'
-                  : 'bg-primary text-primary-foreground hover:opacity-80'
-              }`}
             >
               {security.twoFactorEnabled ? 'Tắt 2FA' : 'Bật 2FA'}
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Security Options */}
-      <div className="rounded-2xl overflow-hidden bg-neutral-50/50 dark:bg-neutral-800/20">
-        <div className="px-4 py-3 bg-neutral-100/50 dark:bg-neutral-700/30">
-          <div className="flex items-center gap-2">
-            <Shield size={16} className="text-neutral-500" />
-            <h3 className="text-sm font-medium text-content dark:text-white">
-              Tùy chọn bảo mật
-            </h3>
-          </div>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield size={16} className="text-muted-foreground" />
+            Tùy chọn bảo mật
+          </CardTitle>
+        </CardHeader>
         <div className="p-4">
           <ToggleSwitch
+            id="security-alerts"
             enabled={security.loginAlerts}
             onChange={() =>
               handleSecurityChange('loginAlerts', !security.loginAlerts)
@@ -256,6 +243,7 @@ const SecuritySettings = () => {
             disabled={updateSettingsMutation.isPending}
           />
           <ToggleSwitch
+            id="security-trusted"
             enabled={security.trustedDevicesOnly}
             onChange={() =>
               handleSecurityChange(
@@ -268,117 +256,115 @@ const SecuritySettings = () => {
             disabled={updateSettingsMutation.isPending}
           />
         </div>
-      </div>
+      </Card>
 
       {/* Active Sessions */}
-      <div className="rounded-2xl overflow-hidden bg-neutral-50/50 dark:bg-neutral-800/20">
-        <div className="px-4 py-3 bg-neutral-100/50 dark:bg-neutral-700/30">
-          <div className="flex items-center gap-2">
-            <Monitor size={16} className="text-neutral-500" />
-            <h3 className="text-sm font-medium text-content dark:text-white">
-              Phiên đăng nhập
-            </h3>
-          </div>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Monitor size={16} className="text-muted-foreground" />
+            Phiên đăng nhập
+          </CardTitle>
+        </CardHeader>
         <div className="p-4 space-y-3">
           {sessions && sessions.length > 0 ? (
             sessions.map(session => (
               <div
                 key={session.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-white/50 dark:bg-neutral-800/40"
+                className="flex items-center justify-between p-3 rounded-xl bg-muted"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-white dark:bg-neutral-700">
+                  <div className="p-2 rounded-lg bg-background dark:bg-neutral-700">
                     {session.deviceType === 'mobile' ? (
-                      <Smartphone className="w-4 h-4 text-neutral-500" />
+                      <Smartphone className="w-4 h-4 text-muted-foreground" />
                     ) : (
-                      <Monitor className="w-4 h-4 text-neutral-500" />
+                      <Monitor className="w-4 h-4 text-muted-foreground" />
                     )}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content dark:text-white">
+                    <p className="text-sm font-medium text-foreground">
                       {session.browser} trên {session.os}
                     </p>
-                    <p className="text-xs text-neutral-500">
+                    <p className="text-xs text-muted-foreground">
                       {session.ip} •{' '}
                       {session.isCurrent ? 'Thiết bị này' : session.lastActive}
                     </p>
                   </div>
                 </div>
                 {!session.isCurrent && (
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => handleRevokeSession(session.id)}
-                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                     title="Đăng xuất phiên này"
                   >
                     <Trash2 size={16} />
-                  </button>
+                  </Button>
                 )}
               </div>
             ))
           ) : (
-            <p className="text-sm text-neutral-500 text-center py-4">
+            <p className="text-sm text-muted-foreground text-center py-4">
               Không có phiên đăng nhập nào
             </p>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* 2FA Setup Modal */}
       {show2FAModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden">
-            <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50">
-              <h3 className="text-lg font-semibold text-content dark:text-white">
+          <div className="w-full max-w-md bg-background rounded-2xl overflow-hidden">
+            <div className="p-4 bg-muted">
+              <h3 className="text-lg font-semibold text-foreground">
                 Thiết lập xác thực hai yếu tố
               </h3>
             </div>
             <div className="p-4 space-y-4">
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              <p className="text-sm text-muted-foreground">
                 Quét mã QR bằng ứng dụng xác thực (Google Authenticator, Authy,
                 ...) rồi nhập mã xác nhận.
               </p>
               {qrCode && (
-                <div className="flex justify-center p-4 bg-white rounded-lg">
+                <div className="flex justify-center p-4 bg-background rounded-lg">
                   <img src={qrCode} alt="QR Code" className="w-48 h-48" />
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-content dark:text-white mb-2">
-                  Mã xác nhận
-                </label>
-                <input
+                <Label className="block mb-2">Mã xác nhận</Label>
+                <Input
                   type="text"
                   value={verifyCode}
                   onChange={e =>
                     setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))
                   }
                   placeholder="Nhập mã 6 số"
-                  className="w-full px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-content dark:text-white text-center text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="text-center text-lg tracking-widest"
                 />
               </div>
             </div>
             <div className="p-4 flex gap-3">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => {
                   setShow2FAModal(false);
                   setVerifyCode('');
                 }}
-                className="flex-1 px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                className="flex-1"
               >
                 Hủy
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleVerify2FA}
                 disabled={verifying || verifyCode.length !== 6}
-                className="flex-1 px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:opacity-80 disabled:opacity-50"
+                className="flex-1"
               >
                 {verifying ? (
                   <Loader2 className="w-4 h-4 animate-spin mx-auto" />
                 ) : (
                   'Xác nhận'
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

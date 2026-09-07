@@ -1,13 +1,14 @@
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import { Navigate, Outlet } from 'react-router-dom';
 
 const ProtectedRoute = () => {
-  const { user, isAuthenticated } = useSelector(state => state.auth);
-  const isRehydrated = useSelector(state => state._persist?.rehydrated);
+  const user = useAuthStore(state => state.user);
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const hasHydrated = useAuthStore(state => state._hasHydrated);
 
-  // Wait for redux-persist to finish rehydrating before making any redirect decisions
-  if (!isRehydrated) {
-    return null; // or a loading spinner
+  // Wait for persist rehydration before making redirect decisions
+  if (!hasHydrated) {
+    return null;
   }
 
   if (!isAuthenticated || !user) {

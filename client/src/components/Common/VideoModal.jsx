@@ -14,6 +14,7 @@ import {
   Download,
   PictureInPicture,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const VideoModal = ({ videoUrl, onClose, poster }) => {
   const videoRef = useRef(null);
@@ -261,12 +262,14 @@ const VideoModal = ({ videoUrl, onClose, poster }) => {
       }}
     >
       {/* Close Button - Same position as image preview */}
-      <button
-        className="absolute top-4 right-4 z-10 bg-white/10 backdrop-blur-sm text-white p-2.5 rounded-xl hover:bg-white/20 transition-colors"
+      <Button
+        variant="ghost"
         onClick={onClose}
+        className="absolute top-4 right-4 z-10 h-auto w-auto rounded-xl bg-white/10 p-2.5 text-white shadow-none backdrop-blur-sm hover:bg-white/20 hover:text-white"
+        aria-label="Close"
       >
         <X size={20} />
-      </button>
+      </Button>
 
       <div
         ref={containerRef}
@@ -333,39 +336,51 @@ const VideoModal = ({ videoUrl, onClose, poster }) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {/* Play/Pause */}
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={togglePlay}
-                  className="p-2 rounded-lg hover:bg-white/20 text-white transition-colors"
+                  className="text-white hover:bg-white/20 hover:text-white"
+                  aria-label={isPlaying ? 'Play' : 'Pause'}
                 >
                   {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                </button>
+                </Button>
 
                 {/* Skip Backward */}
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => skip(-10)}
-                  className="p-2 rounded-lg hover:bg-white/20 text-white transition-colors"
+                  className="text-white hover:bg-white/20 hover:text-white"
                   title="Rewind 10s"
+                  aria-label="Rewind 10s"
                 >
                   <SkipBack size={18} />
-                </button>
+                </Button>
 
                 {/* Skip Forward */}
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => skip(10)}
-                  className="p-2 rounded-lg hover:bg-white/20 text-white transition-colors"
+                  className="text-white hover:bg-white/20 hover:text-white"
                   title="Forward 10s"
+                  aria-label="Forward 10s"
                 >
                   <SkipForward size={18} />
-                </button>
+                </Button>
 
                 {/* Volume */}
                 <div className="flex items-center gap-2 group">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={toggleMute}
-                    className="p-2 rounded-lg hover:bg-white/20 text-white transition-colors"
+                    className="text-white hover:bg-white/20 hover:text-white"
+                    aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
                   >
                     {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                  </button>
+                  </Button>
                   <input
                     type="range"
                     min="0"
@@ -387,57 +402,72 @@ const VideoModal = ({ videoUrl, onClose, poster }) => {
               <div className="flex items-center gap-2">
                 {/* Settings */}
                 <div className="relative">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => setShowSettings(!showSettings)}
-                    className="p-2 rounded-lg hover:bg-white/20 text-white transition-colors"
+                    className="text-white hover:bg-white/20 hover:text-white"
+                    aria-label="Playback settings"
                   >
                     <Settings size={18} />
-                  </button>
+                  </Button>
                   {showSettings && (
-                    <div className="absolute bottom-full right-0 mb-2 bg-neutral-900 rounded-lg overflow-hidden min-w-[150px]">
-                      <div className="px-3 py-2 text-xs text-neutral-400 border-b border-neutral-700">
+                    <div className="absolute bottom-full right-0 mb-2 min-w-[150px] overflow-hidden rounded-lg bg-neutral-900">
+                      <div className="border-b border-neutral-700 px-3 py-2 text-xs text-neutral-400">
                         Playback Speed
                       </div>
                       {playbackRates.map((rate) => (
-                        <button
+                        <Button
                           key={rate}
+                          variant="ghost"
                           onClick={() => changePlaybackRate(rate)}
-                          className={`w-full px-3 py-2 text-left text-sm hover:bg-neutral-800 transition-colors ${
-                            playbackRate === rate ? 'text-primary' : 'text-white'
+                          className={`h-auto w-full justify-start rounded-none px-3 py-2 text-left text-sm ${
+                            playbackRate === rate
+                              ? 'bg-muted text-primary hover:text-primary'
+                              : 'text-white hover:bg-neutral-800 hover:text-white'
                           }`}
                         >
                           {rate === 1 ? 'Normal' : `${rate}x`}
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   )}
                 </div>
 
                 {/* Picture in Picture */}
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={togglePiP}
-                  className="p-2 rounded-lg hover:bg-white/20 text-white transition-colors"
+                  className="text-white hover:bg-white/20 hover:text-white"
                   title="Picture in Picture"
+                  aria-label="Picture in Picture"
                 >
                   <PictureInPicture size={18} />
-                </button>
+                </Button>
 
                 {/* Download */}
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={handleDownload}
-                  className="p-2 rounded-lg hover:bg-white/20 text-white transition-colors"
+                  className="text-white hover:bg-white/20 hover:text-white"
                   title="Download"
+                  aria-label="Download"
                 >
                   <Download size={18} />
-                </button>
+                </Button>
 
                 {/* Fullscreen */}
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={toggleFullscreen}
-                  className="p-2 rounded-lg hover:bg-white/20 text-white transition-colors"
+                  className="text-white hover:bg-white/20 hover:text-white"
+                  aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
                 >
                   {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

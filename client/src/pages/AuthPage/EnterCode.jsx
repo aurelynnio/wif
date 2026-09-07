@@ -1,6 +1,9 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, ArrowLeft, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 
 const EnterCode = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -64,7 +67,7 @@ const EnterCode = () => {
       </div>
 
       {/* Right Panel - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-5 sm:p-8 bg-white dark:bg-black">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-5 sm:p-8 bg-background">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center mb-10">
@@ -76,10 +79,10 @@ const EnterCode = () => {
           {!verified ? (
             <>
               <div className="mb-10 text-center">
-                <h2 className="text-3xl font-bold text-black dark:text-white mb-2">
+                <h2 className="text-3xl font-bold text-foreground mb-2">
                   Enter code
                 </h2>
-                <p className="text-neutral-500">
+                <p className="text-muted-foreground">
                   We sent a 6-digit code to your email
                 </p>
               </div>
@@ -88,7 +91,7 @@ const EnterCode = () => {
                 {/* Code inputs */}
                 <div className="flex justify-center gap-2 sm:gap-3">
                   {code.map((digit, index) => (
-                    <input
+                    <Input
                       key={index}
                       ref={el => (inputRefs.current[index] = el)}
                       type="text"
@@ -98,33 +101,31 @@ const EnterCode = () => {
                       aria-label={`Verification code digit ${index + 1}`}
                       onChange={e => handleChange(index, e.target.value)}
                       onKeyDown={e => handleKeyDown(index, e)}
-                      className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-semibold bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white transition-all"
+                      className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-semibold"
                     />
                   ))}
                 </div>
 
-                <button
+                <Button
                   type="submit"
                   disabled={isLoading || code.some(d => !d)}
-                  className="w-full py-3.5 bg-black dark:bg-white text-white dark:text-black font-medium rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full"
                 >
-                  {isLoading ? (
-                    <div className="w-5 h-5 border-2 border-white/30 dark:border-black/30 border-t-white dark:border-t-black rounded-full animate-spin" />
-                  ) : (
-                    'Verify Code'
-                  )}
-                </button>
+                  {isLoading ? <Spinner /> : 'Verify Code'}
+                </Button>
               </form>
 
               <div className="mt-8 text-center">
-                <p className="text-neutral-500">
+                <p className="text-muted-foreground">
                   Didn't receive the code?{' '}
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
                     onClick={handleResend}
-                    className="font-medium text-black dark:text-white hover:underline"
+                    className="text-foreground font-medium hover:underline"
                   >
                     Resend
-                  </button>
+                  </Button>
                 </p>
               </div>
             </>
@@ -136,10 +137,10 @@ const EnterCode = () => {
                   className="text-green-600 dark:text-green-400"
                 />
               </div>
-              <h2 className="text-2xl font-bold text-black dark:text-white mb-2">
+              <h2 className="text-2xl font-bold text-foreground mb-2">
                 Verified!
               </h2>
-              <p className="text-neutral-500 mb-8">
+              <p className="text-muted-foreground mb-8">
                 Your email has been verified successfully.
               </p>
               <Link
@@ -156,7 +157,7 @@ const EnterCode = () => {
             <div className="mt-10 text-center">
               <Link
                 to="/auth/login"
-                className="inline-flex items-center gap-2 text-neutral-500 hover:text-black dark:hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft size={16} />
                 Back to sign in
