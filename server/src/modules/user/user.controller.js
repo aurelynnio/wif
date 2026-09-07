@@ -1,6 +1,7 @@
 import { CatchError } from '../../configs/CatchError.js';
 import UserService from './user.service.js';
-import { formatResponse } from '../../helpers/formatResponse.js';
+import { sendOk } from '../../helpers/apiResponse.js';
+import ApiError from '../../helpers/ApiError.js';
 import logger from '../../configs/logger.js';
 import MediaService from '../shared/media/media.service.js';
 
@@ -31,7 +32,10 @@ const UserController = {
     const requesterId = req.user?.id;
 
     const user = await UserService.getUserById(id, requesterId);
-    return formatResponse(res, 200, 1, 'Get user successfully!', user);
+    return sendOk(res, {
+      message: 'Get user successfully!',
+      data: user,
+    });
   }),
 
   /**
@@ -52,7 +56,7 @@ const UserController = {
       userId,
       parseInt(limit)
     );
-    return formatResponse(res, 200, 1, 'Success', users);
+    return sendOk(res, { data: users });
   }),
 
   /**
@@ -74,19 +78,14 @@ const UserController = {
     const searchQuery = q || query;
 
     if (!searchQuery || searchQuery.trim().length < 2) {
-      return formatResponse(
-        res,
-        400,
-        0,
-        'Search query must be at least 2 characters'
-      );
+      throw ApiError.badRequest('Search query must be at least 2 characters');
     }
 
     const result = await UserService.searchUsers(searchQuery, currentUserId, {
       page: parseInt(page),
       limit: parseInt(limit),
     });
-    return formatResponse(res, 200, 1, 'Success', result);
+    return sendOk(res, { data: result });
   }),
 
   /**
@@ -107,16 +106,18 @@ const UserController = {
       targetUserId
     );
     if (!resolvedTargetId) {
-      return formatResponse(res, 404, 0, 'Người dùng không tồn tại');
+      throw ApiError.notFound('Người dùng không tồn tại');
     }
 
     const status = await UserService.checkFollowStatus(
       currentUserId,
       resolvedTargetId
     );
-    return formatResponse(res, 200, 1, 'Success', {
-      status,
-      isFollowing: status === 'active',
+    return sendOk(res, {
+      data: {
+        status,
+        isFollowing: status === 'active',
+      },
     });
   }),
 
@@ -135,7 +136,7 @@ const UserController = {
     const currentUserId = req.user.id;
 
     if (!targetUserId) {
-      return formatResponse(res, 400, 0, 'Target user ID is required');
+      throw ApiError.badRequest('Target user ID is required');
     }
 
     const resolvedTargetId = await UserService.resolveUserIdOrUsername(
@@ -151,7 +152,7 @@ const UserController = {
         ? 'Đã gửi yêu cầu theo dõi'
         : 'Theo dõi thành công';
 
-    return formatResponse(res, 200, 1, message, result);
+    return sendOk(res, { message, data: result });
   }),
 
   /**
@@ -169,7 +170,7 @@ const UserController = {
     const currentUserId = req.user.id;
 
     if (!targetUserId) {
-      return formatResponse(res, 400, 0, 'Target user ID is required');
+      throw ApiError.badRequest('Target user ID is required');
     }
 
     const resolvedTargetId = await UserService.resolveUserIdOrUsername(
@@ -179,7 +180,7 @@ const UserController = {
       currentUserId,
       resolvedTargetId
     );
-    return formatResponse(res, 200, 1, 'Đã hủy theo dõi', result);
+    return sendOk(res, { message: 'Đã hủy theo dõi', data: result });
   }),
 
   /**
@@ -205,7 +206,7 @@ const UserController = {
       limit: parseInt(limit),
       requesterId,
     });
-    return formatResponse(res, 200, 1, 'Success', result);
+    return sendOk(res, { data: result });
   }),
 
   /**
@@ -231,7 +232,7 @@ const UserController = {
       limit: parseInt(limit),
       requesterId,
     });
-    return formatResponse(res, 200, 1, 'Success', result);
+    return sendOk(res, { data: result });
   }),
 
   /**
@@ -256,7 +257,7 @@ const UserController = {
       targetUserId,
       parseInt(limit)
     );
-    return formatResponse(res, 200, 1, 'Success', result);
+    return sendOk(res, { data: result });
   }),
 
   /**
@@ -278,7 +279,7 @@ const UserController = {
       page: parseInt(page),
       limit: parseInt(limit),
     });
-    return formatResponse(res, 200, 1, 'Success', result);
+    return sendOk(res, { data: result });
   }),
 
   /**
@@ -296,11 +297,14 @@ const UserController = {
     const { followerId } = req.body;
 
     if (!followerId) {
-      return formatResponse(res, 400, 0, 'Follower ID is required');
+      throw ApiError.badRequest('Follower ID is required');
     }
 
     const result = await UserService.acceptFollowRequest(userId, followerId);
-    return formatResponse(res, 200, 1, 'Đã chấp nhận yêu cầu theo dõi', result);
+    return sendOk(res, {
+      message: 'Đã chấp nhận yêu cầu theo dõi',
+      data: result,
+    });
   }),
 
   /**
@@ -318,11 +322,14 @@ const UserController = {
     const { followerId } = req.body;
 
     if (!followerId) {
-      return formatResponse(res, 400, 0, 'Follower ID is required');
+      throw ApiError.badRequest('Follower ID is required');
     }
 
     const result = await UserService.rejectFollowRequest(userId, followerId);
-    return formatResponse(res, 200, 1, 'Đã từ chối yêu cầu theo dõi', result);
+    return sendOk(res, {
+      message: 'Đã từ chối yêu cầu theo dõi',
+      data: result,
+    });
   }),
 
   /**
@@ -344,7 +351,10 @@ const UserController = {
       id,
       requesterId
     );
-    return formatResponse(res, 200, 1, 'Get profile successfully!', profile);
+    return sendOk(res, {
+      message: 'Get profile successfully!',
+      data: profile,
+    });
   }),
 
   /**
@@ -404,13 +414,10 @@ const UserController = {
         }
       }
 
-      return formatResponse(
-        res,
-        200,
-        1,
-        'Cập nhật thông tin hồ sơ thành công',
-        user
-      );
+      return sendOk(res, {
+        message: 'Cập nhật thông tin hồ sơ thành công',
+        data: user,
+      });
     } catch (error) {
       await Promise.allSettled(jobs.map(job => MediaService.drop(job.jobId)));
       throw error;
@@ -428,7 +435,7 @@ const UserController = {
   getUserSettings: CatchError(async (req, res) => {
     const userId = req.user.id;
     const settings = await UserService.getUserSettings(userId);
-    return formatResponse(res, 200, 1, 'Success', settings);
+    return sendOk(res, { data: settings });
   }),
 
   /**
@@ -462,13 +469,10 @@ const UserController = {
       userId,
       privacySettings
     );
-    return formatResponse(
-      res,
-      200,
-      1,
-      'Cập nhật cài đặt quyền riêng tư thành công',
-      updated
-    );
+    return sendOk(res, {
+      message: 'Cập nhật cài đặt quyền riêng tư thành công',
+      data: updated,
+    });
   }),
 
   /**
@@ -509,13 +513,10 @@ const UserController = {
       userId,
       settings
     );
-    return formatResponse(
-      res,
-      200,
-      1,
-      'Cập nhật cài đặt thông báo thành công',
-      updated
-    );
+    return sendOk(res, {
+      message: 'Cập nhật cài đặt thông báo thành công',
+      data: updated,
+    });
   }),
 
   /**
@@ -537,13 +538,10 @@ const UserController = {
     };
 
     const updated = await UserService.updateSecuritySettings(userId, settings);
-    return formatResponse(
-      res,
-      200,
-      1,
-      'Cập nhật cài đặt bảo mật thành công',
-      updated
-    );
+    return sendOk(res, {
+      message: 'Cập nhật cài đặt bảo mật thành công',
+      data: updated,
+    });
   }),
 
   /**
@@ -570,13 +568,10 @@ const UserController = {
     };
 
     const updated = await UserService.updateContentSettings(userId, settings);
-    return formatResponse(
-      res,
-      200,
-      1,
-      'Cập nhật cài đặt nội dung thành công',
-      updated
-    );
+    return sendOk(res, {
+      message: 'Cập nhật cài đặt nội dung thành công',
+      data: updated,
+    });
   }),
 
   /**
@@ -605,13 +600,10 @@ const UserController = {
       userId,
       settings
     );
-    return formatResponse(
-      res,
-      200,
-      1,
-      'Cập nhật cài đặt giao diện thành công',
-      updated
-    );
+    return sendOk(res, {
+      message: 'Cập nhật cài đặt giao diện thành công',
+      data: updated,
+    });
   }),
 
   /**
@@ -629,11 +621,11 @@ const UserController = {
     const { blockedUserId } = req.body;
 
     if (!blockedUserId) {
-      return formatResponse(res, 400, 0, 'Thiếu ID người dùng cần chặn');
+      throw ApiError.badRequest('Thiếu ID người dùng cần chặn');
     }
 
     await UserService.blockUser(userId, blockedUserId);
-    return formatResponse(res, 200, 1, 'Chặn người dùng thành công');
+    return sendOk(res, { message: 'Chặn người dùng thành công' });
   }),
 
   /**
@@ -651,11 +643,11 @@ const UserController = {
     const { blockedUserId } = req.params;
 
     if (!blockedUserId) {
-      return formatResponse(res, 400, 0, 'Thiếu ID người dùng cần bỏ chặn');
+      throw ApiError.badRequest('Thiếu ID người dùng cần bỏ chặn');
     }
 
     await UserService.unblockUser(userId, blockedUserId);
-    return formatResponse(res, 200, 1, 'Bỏ chặn người dùng thành công');
+    return sendOk(res, { message: 'Bỏ chặn người dùng thành công' });
   }),
 
   /**
@@ -673,11 +665,11 @@ const UserController = {
     const { targetUserId } = req.body;
 
     if (!targetUserId) {
-      return formatResponse(res, 400, 0, 'Thiếu ID người dùng cần ẩn');
+      throw ApiError.badRequest('Thiếu ID người dùng cần ẩn');
     }
 
     await UserService.muteUser(userId, targetUserId);
-    return formatResponse(res, 200, 1, 'Đã ẩn người dùng thành công');
+    return sendOk(res, { message: 'Đã ẩn người dùng thành công' });
   }),
 
   /**
@@ -695,7 +687,7 @@ const UserController = {
     const { targetUserId } = req.params;
 
     await UserService.unmuteUser(userId, targetUserId);
-    return formatResponse(res, 200, 1, 'Đã bỏ ẩn người dùng thành công');
+    return sendOk(res, { message: 'Đã bỏ ẩn người dùng thành công' });
   }),
 
   /**
@@ -709,7 +701,7 @@ const UserController = {
   getBlockList: CatchError(async (req, res) => {
     const userId = req.user.id;
     const blockedUsers = await UserService.getBlockedUsers(userId);
-    return formatResponse(res, 200, 1, 'Success', blockedUsers);
+    return sendOk(res, { data: blockedUsers });
   }),
 
   /**
@@ -723,7 +715,7 @@ const UserController = {
   getMuteList: CatchError(async (req, res) => {
     const userId = req.user.id;
     const mutedUsers = await UserService.getMutedUsers(userId);
-    return formatResponse(res, 200, 1, 'Success', mutedUsers);
+    return sendOk(res, { data: mutedUsers });
   }),
 };
 

@@ -1,41 +1,41 @@
 import logger from "../../configs/logger.js";
 
+const getPostRoomId = (postId) => `post:${postId}`;
+
 export const registerPostHandlers = (io, socket) => {
-    // Listen for post likes
-    socket.on("post:like:listen", (postId) => {
-        try {
-            if (!postId) return;
-            const roomId = `post:${postId}`;
-            socket.join(roomId);
-            logger.info(`User ${socket.id} listening to post: ${postId}`);
-            socket.emit("post:like:listening", { postId, success: true });
-        } catch (error) {
-            logger.error("Error listening to post:", error);
-        }
+    const registerPostRoomEvent = (eventName, action, options = {}) => {
+        socket.on(eventName, (postId) => {
+            try {
+                if (!postId) return;
+
+                const roomId = getPostRoomId(postId);
+                socket[action](roomId);
+
+                if (options.logMessage) {
+                    logger.info(options.logMessage(postId));
+                }
+
+                if (options.emitEvent) {
+                    socket.emit(options.emitEvent, { postId, success: true });
+                }
+            } catch (error) {
+                logger.error(options.errorMessage, error);
+            }
+        });
+    };
+
+    registerPostRoomEvent("post:like:listen", "join", {
+        emitEvent: "post:like:listening",
+        errorMessage: "Error listening to post:",
+        logMessage: postId => `User ${socket.id} listening to post: ${postId}`,
     });
 
-    // Join post room (for comments and realtime updates)
-    socket.on("join_post", (postId) => {
-        try {
-            if (!postId) return;
-            const roomId = `post:${postId}`;
-            socket.join(roomId);
-            // logger.info(`User ${socket.id} joined post room: ${postId}`);
-        } catch (error) {
-            logger.error("Error joining post room:", error);
-        }
+    registerPostRoomEvent("join_post", "join", {
+        errorMessage: "Error joining post room:",
     });
 
-    // Leave post room
-    socket.on("leave_post", (postId) => {
-        try {
-            if (!postId) return;
-            const roomId = `post:${postId}`;
-            socket.leave(roomId);
-            // logger.info(`User ${socket.id} left post room: ${postId}`);
-        } catch (error) {
-            logger.error("Error leaving post room:", error);
-        }
+    registerPostRoomEvent("leave_post", "leave", {
+        errorMessage: "Error leaving post room:",
     });
 
     // Client emitting like (usually done via API, but for immediate feedback/optimistic UI)
@@ -44,7 +44,7 @@ export const registerPostHandlers = (io, socket) => {
             const { postId, userId, action } = data;
             if (!postId) return;
             
-            const roomId = `post:${postId}`;
+            const roomId = getPostRoomId(postId);
             const payload = { postId, userId, action, timestamp: new Date() };
             
             io.to(roomId).emit("post:like:update", payload);

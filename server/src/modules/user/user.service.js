@@ -11,6 +11,7 @@ import Message from '../../models/Message.js';
 import Notification from '../../models/Notification.js';
 import logger from '../../configs/logger.js';
 import ApiError from '../../helpers/ApiError.js';
+import { escapeRegex } from '../../utils/string.util.js';
 import NotificationService from '../notification/notification.service.js';
 
 
@@ -99,7 +100,7 @@ class UserService {
     const followStatus = followStatusRaw;
     const isFollowing = followStatus === 'active';
 
-    if (requesterId && requesterId !== userId.toString()) {
+    if (!requesterId || requesterId !== userId.toString()) {
       if (user.privacy?.profileVisibility === 'private') {
         if (!isFollowing) {
           return {
@@ -387,11 +388,12 @@ class UserService {
       ...(settings?.mutedUsers || []),
     ];
 
+    const escapedQuery = escapeRegex(query);
     const searchQuery = {
       _id: { $nin: excludeIds },
       $or: [
-        { username: { $regex: query, $options: 'i' } },
-        { name: { $regex: query, $options: 'i' } },
+        { username: { $regex: escapedQuery, $options: 'i' } },
+        { name: { $regex: escapedQuery, $options: 'i' } },
       ],
     };
 
@@ -650,11 +652,16 @@ class UserService {
     if (showActivity !== undefined)
       updateData['privacy.showActivity'] = showActivity;
 
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { $set: updateData },
-      { new: true }
-    );
+    let user;
+    if (Object.keys(updateData).length > 0) {
+      user = await User.findByIdAndUpdate(
+        userId,
+        { $set: updateData },
+        { new: true }
+      );
+    } else {
+      user = await User.findById(userId);
+    }
 
     const settingsUpdate = {};
     if (privacySettings.postVisibility)

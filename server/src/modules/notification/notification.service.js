@@ -2,10 +2,10 @@ import { randomUUID } from 'crypto';
 import mongoose from 'mongoose';
 import UserSettings from '../../models/UserSettings.js';
 import User from '../../models/User.js';
+import Notification from '../../models/Notification.js';
 import logger from '../../configs/logger.js';
 import { retryOperation } from '../../utils/retryOperation.js';
 import { getChannel, rabbit } from '../../configs/rabbitmq.config.js';
-import notificationRepository from './notification.repository.js';
 import socketService from '../shared/socket/socket.service.js';
 
 const GROUP_TIME = 24 * 60 * 60 * 1000;
@@ -174,7 +174,7 @@ class NotificationService {
     let notificationId = null;
 
     if (groupKey) {
-      const existingGroup = await notificationRepository.findOne({
+      const existingGroup = await Notification.findOne({
         recipient,
         groupKey,
         isRead: false,
@@ -188,7 +188,7 @@ class NotificationService {
 
     if (!notificationId) {
       const senderData = await this._loadSenderData(sender);
-      const notification = await notificationRepository.createNotification({
+      const notification = await Notification.create({
         recipient,
         sender,
         type,
@@ -240,19 +240,18 @@ class NotificationService {
     }
 
     const [notifications, total, unreadCount] = await Promise.all([
-      notificationRepository.findNotifications(query, {
-        populate: [
+      Notification.find(query)
+        .populate([
           { path: 'sender', select: 'username name avatar verified' },
           { path: 'post', select: '_id caption media' },
           { path: 'relatedPost', select: '_id caption media' },
-        ],
-        sort: { createdAt: -1 },
-        skip: (page - 1) * limit,
-        limit,
-        lean: true,
-      }),
-      notificationRepository.countNotifications(query),
-      notificationRepository.countNotifications({
+        ])
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Notification.countDocuments(query),
+      Notification.countDocuments({
         recipient: userId,
         isRead: false,
       }),
@@ -316,17 +315,21 @@ class NotificationService {
       .select('username avatar')
       .lean();
 
-    await notificationRepository.updateNotificationById(existingGroup._id, {
-      $push: {
-        groupedSenders: {
-          user: sender,
-          username: senderUser?.username,
-          avatar: senderUser?.avatar,
+    await Notification.findByIdAndUpdate(
+      existingGroup._id,
+      {
+        $push: {
+          groupedSenders: {
+            user: sender,
+            username: senderUser?.username,
+            avatar: senderUser?.avatar,
+          },
         },
+        $inc: { groupCount: 1 },
+        $set: { updatedAt: new Date() },
       },
-      $inc: { groupCount: 1 },
-      $set: { updatedAt: new Date() },
-    });
+      { new: true }
+    );
 
     return existingGroup._id;
   }
@@ -352,10 +355,9 @@ class NotificationService {
   }
 
   static async _getFull(notificationId) {
-    return notificationRepository.findById(notificationId, {
-      populate: SOCKET_POPULATE,
-      lean: true,
-    });
+    return Notification.findById(notificationId)
+      .populate(SOCKET_POPULATE)
+      .lean();
   }
 
   static async _emitRealtime(notification) {
@@ -490,28 +492,25 @@ class NotificationService {
   }
 
   static async getNotificationById(notificationId, userId) {
-    const notification = await notificationRepository.findOne(
-      {
-        _id: notificationId,
-        recipient: userId,
-      },
-      {
-        populate: [
-          { path: 'sender', select: 'username name avatar verified' },
-          { path: 'relatedPost', select: '_id caption media' },
-        ],
-        lean: true,
-      }
-    );
+    const notification = await Notification.findOne({
+      _id: notificationId,
+      recipient: userId,
+    })
+      .populate([
+        { path: 'sender', select: 'username name avatar verified' },
+        { path: 'relatedPost', select: '_id caption media' },
+      ])
+      .lean();
 
     return notification ? this._formatNotification(notification) : null;
   }
 
   static async markAsRead(notificationId, userId) {
     return retryOperation(() =>
-      notificationRepository.findOneAndUpdate(
+      Notification.findOneAndUpdate(
         { _id: notificationId, recipient: userId },
-        { isRead: true, readAt: new Date() }
+        { isRead: true, readAt: new Date() },
+        { new: true }
       )
     );
   }
@@ -523,7 +522,7 @@ class NotificationService {
       query.type = type;
     }
 
-    const result = await notificationRepository.updateNotifications(query, {
+    const result = await Notification.updateMany(query, {
       isRead: true,
       readAt: new Date(),
     });
@@ -532,7 +531,7 @@ class NotificationService {
   }
 
   static async deleteNotification(notificationId, userId) {
-    const result = await notificationRepository.findOneAndDelete({
+    const result = await Notification.findOneAndDelete({
       _id: notificationId,
       recipient: userId,
     });
@@ -549,13 +548,13 @@ class NotificationService {
       query.type = type;
     }
 
-    const result = await notificationRepository.deleteNotifications(query);
+    const result = await Notification.deleteMany(query);
 
     return { deletedCount: result.deletedCount };
   }
 
   static async getUnreadCount(userId) {
-    return notificationRepository.countNotifications({
+    return Notification.countDocuments({
       recipient: userId,
       isRead: false,
       $or: [
@@ -566,7 +565,7 @@ class NotificationService {
   }
 
   static async getUnreadCountByType(userId) {
-    const counts = await notificationRepository.aggregateNotifications([
+    const counts = await Notification.aggregate([
       {
         $match: {
           recipient: new mongoose.Types.ObjectId(userId),
@@ -714,13 +713,12 @@ class NotificationService {
     }
 
     if (validNotifications.length > 0) {
-      await notificationRepository
-        .insertManyNotifications(validNotifications, { ordered: false })
-        .catch(err =>
+      await Notification.insertMany(validNotifications, { ordered: false }).catch(
+        err =>
           logger.warn('Batch notification insert error', {
             message: err.message,
           })
-        );
+      );
     }
 
     return validNotifications.length;
@@ -771,7 +769,7 @@ class NotificationService {
 
   static async cleanupOldNotifications(days = 30) {
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    const result = await notificationRepository.deleteNotifications({
+    const result = await Notification.deleteMany({
       isRead: true,
       createdAt: { $lt: cutoffDate },
     });

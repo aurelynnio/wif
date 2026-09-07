@@ -1,14 +1,23 @@
 import logger from "../../configs/logger.js";
 
+const getSocketUserId = (userId) => userId?.toString();
+
+const withTimestamp = (payload) => ({
+  ...payload,
+  timestamp: new Date(),
+});
+
 export const registerNotificationHandlers = (io, socket) => {
   // Send Notification (Direct from client - rare but supported)
   socket.on("send_notification", (data) => {
     try {
       if (!data || !data.recipient) return;
       
-      const recipientStr = data.recipient.toString();
-      socket.to(recipientStr).emit("notification:new", { ...data, timestamp: new Date() });
-      io.emit(`user:${recipientStr}:notification`, { ...data, timestamp: new Date() }); // Legacy emit
+      const recipientStr = getSocketUserId(data.recipient);
+      const payload = withTimestamp(data);
+
+      socket.to(recipientStr).emit("notification:new", payload);
+      io.emit(`user:${recipientStr}:notification`, payload); // Legacy emit
       
       socket.emit("notification_sent", { success: true, recipient: recipientStr });
     } catch (error) {
@@ -20,7 +29,7 @@ export const registerNotificationHandlers = (io, socket) => {
   socket.on("notification:register", (userId) => {
     try {
       if (!userId) return;
-      const userIdStr = userId.toString();
+      const userIdStr = getSocketUserId(userId);
       socket.join(userIdStr);
       socket.user = { id: userIdStr }; // Ensure user attached
       logger.info(`User ${socket.id} registered for notifications: ${userIdStr}`);

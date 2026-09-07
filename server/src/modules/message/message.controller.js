@@ -398,7 +398,8 @@ const MessageController = {
    */
   SendMessage: CatchError(async (req, res) => {
     const userId = req.user.id;
-    const { conversationId, content, messageType = 'text', replyTo } = req.body;
+    // Validation & frontend gửi field `type` (text/image/file/video/audio)
+    const { conversationId, content, type = 'text', replyTo } = req.body;
 
     if (!content && (!req.files || req.files.length === 0)) {
       throw ApiError.badRequest('Message content or attachment is required');
@@ -409,7 +410,7 @@ const MessageController = {
       userId,
       {
         content,
-        messageType,
+        messageType: type,
         replyTo,
       },
       req.files || []
@@ -595,13 +596,14 @@ const MessageController = {
    */
   SearchMessages: CatchError(async (req, res) => {
     const userId = req.user.id;
-    const { query, conversationId, page = 1, limit = 20 } = req.query;
+    const { q, query, conversationId, page = 1, limit = 20 } = req.query;
+    const searchTerm = q || query;
 
-    if (!query || query.trim().length < 2) {
+    if (!searchTerm || searchTerm.trim().length < 2) {
       throw ApiError.badRequest('Query must be at least 2 characters');
     }
 
-    const result = await MessageService.searchMessages(userId, query, {
+    const result = await MessageService.searchMessages(userId, searchTerm, {
       conversationId,
       page: parseInt(page),
       limit: parseInt(limit),
@@ -627,12 +629,13 @@ const MessageController = {
    */
   GetUsersForChat: CatchError(async (req, res) => {
     const userId = req.user.id;
-    const { page = 1, limit = 20, search } = req.query;
+    const { page = 1, limit = 20, q, search } = req.query;
+    const searchTerm = q || search;
 
     const result = await MessageService.getUsersForChat(userId, {
       page: parseInt(page),
       limit: parseInt(limit),
-      search,
+      search: searchTerm,
     });
     return sendOk(res, {
       message: 'Success',

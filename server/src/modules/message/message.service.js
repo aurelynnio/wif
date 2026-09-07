@@ -8,6 +8,7 @@ import { retryOperation } from '../../utils/retryOperation.js';
 import socketService from '../shared/socket/socket.service.js';
 import Conversation from '../../models/Conversation.js';
 import ApiError from '../../helpers/ApiError.js';
+import { escapeRegex } from '../../utils/string.util.js';
 import MediaService from '../shared/media/media.service.js';
 
 
@@ -808,7 +809,16 @@ class MessageService {
 
     const blockedUsers = settings?.blockedUsers || [];
 
+    const conversations = await Conversation.find({ participants: userId })
+      .select('_id')
+      .lean();
+    const conversationIds = conversations.map(c => c._id);
+
     const count = await Message.countDocuments({
+      $or: [
+        { conversation: { $in: conversationIds } },
+        { receiver: userId },
+      ],
       'seenBy.user': { $ne: userId },
       sender: { $nin: [userId, ...blockedUsers] },
       isDeleted: false,
@@ -822,40 +832,58 @@ class MessageService {
    * Search messages by content
    * @param {string} userId - User ID
    * @param {string} query - Search keyword
-   * @param {Object} options - Pagination options {page, limit}
+   * @param {Object} options - Pagination options {page, limit, conversationId}
    * @returns {Promise<{messages: Array, total: number, hasMore: boolean}>} Search results
    */
   static async searchMessages(userId, query, options = {}) {
-    const { page = 1, limit = 20 } = options;
+    const { page = 1, limit = 20, conversationId } = options;
 
     if (!query || query.trim().length < 2) {
-      return { messages: [], total: 0 };
+      return { messages: [], total: 0, hasMore: false };
     }
 
-    const messages = await Message.find({
-      $or: [{ sender: userId }, { receiver: userId }],
-      content: { $regex: query, $options: 'i' },
-      isDeleted: false,
-      deletedFor: { $ne: userId },
-    })
-      .populate('sender', 'username name avatar')
-      .populate('receiver', 'username name avatar')
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean();
+    const escapedQuery = escapeRegex(query);
 
-    const total = await Message.countDocuments({
-      $or: [{ sender: userId }, { receiver: userId }],
-      content: { $regex: query, $options: 'i' },
+    let baseFilter;
+    if (conversationId) {
+      baseFilter = { conversation: conversationId };
+    } else {
+      const conversations = await Conversation.find({ participants: userId })
+        .select('_id')
+        .lean();
+      const conversationIds = conversations.map(c => c._id);
+
+      baseFilter = {
+        $or: [
+          { conversation: { $in: conversationIds } },
+          { sender: userId },
+          { receiver: userId },
+        ],
+      };
+    }
+
+    const filter = {
+      ...baseFilter,
+      content: { $regex: escapedQuery, $options: 'i' },
       isDeleted: false,
       deletedFor: { $ne: userId },
-    });
+    };
+
+    const [messages, total] = await Promise.all([
+      Message.find(filter)
+        .populate('sender', 'username name avatar')
+        .populate('receiver', 'username name avatar')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Message.countDocuments(filter),
+    ]);
 
     return {
       messages: messages.map(msg => ({
         ...msg,
-        isMine: msg.sender._id.toString() === userId.toString(),
+        isMine: msg.sender?._id?.toString() === userId.toString(),
       })),
       total,
       hasMore: page * limit < total,

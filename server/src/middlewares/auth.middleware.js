@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 import config from '../configs/config.js';
 import logger from '../configs/logger.js';
 import ApiError from '../helpers/ApiError.js';
@@ -47,9 +48,8 @@ export const verifyToken = CatchError(async (req, res, next) => {
     });
   }
 
-  const User = (await import('../models/User.js')).default;
   const userRecord = await User.findById(payload.id).select(
-    'isAdmin moderation.status moderation.suspendedUntil isActive'
+    'isAdmin moderation.status moderation.suspendedUntil moderation.expiresAt isActive'
   );
 
   if (!userRecord || userRecord.isActive === false) {
@@ -65,7 +65,8 @@ export const verifyToken = CatchError(async (req, res, next) => {
   }
 
   if (userRecord.moderation?.status === 'suspended') {
-    const suspendedUntil = userRecord.moderation?.suspendedUntil;
+    const suspendedUntil =
+      userRecord.moderation?.suspendedUntil || userRecord.moderation?.expiresAt;
     if (suspendedUntil && suspendedUntil > new Date()) {
       const remainingDays = Math.ceil(
         (suspendedUntil - new Date()) / (1000 * 60 * 60 * 24)
@@ -78,6 +79,7 @@ export const verifyToken = CatchError(async (req, res, next) => {
   }
 
   req.user = {
+    id: payload.id,
     ...payload,
     isAdmin: userRecord.isAdmin,
   };

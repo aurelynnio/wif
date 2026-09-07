@@ -70,7 +70,7 @@ const startWorker = async () => {
 
         try {
           await NotificationService.handleMessage(message, {
-            emitRealtime: false,
+            emitRealtime: true,
           });
         } catch (error) {
           logger.error('Notification consumer error', {

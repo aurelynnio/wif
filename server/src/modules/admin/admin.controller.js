@@ -180,7 +180,7 @@ export const AdminController = {
     const user = await AdminService.getUserById(userId);
     return sendOk(res, {
       message: 'User profile retrieved successfully',
-      data: userProfile,
+      data: user,
     });
 
   }),

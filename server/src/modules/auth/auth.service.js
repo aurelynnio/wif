@@ -81,11 +81,11 @@ class AuthService {
   }
 
   static async login(credentials, deviceInfo = {}) {
-    const { email, password, twoFactorToken } = credentials;
+    const { email, password, twoFactorToken } = credentials || {};
 
-    const user = await User.findOne({ email: email.toLowerCase() }).select(
-      '+password +loginAttempts'
-    );
+    const user = await User.findOne({ email: email?.toLowerCase() })
+      .select('+password +loginAttempts')
+      .lean();
 
     if (!user) {
       throw ApiError.unauthorized('Email hoặc mật khẩu không đúng');
@@ -96,7 +96,8 @@ class AuthService {
     }
 
     if (user.moderation?.status === 'suspended') {
-      const suspendedUntil = user.moderation.suspendedUntil;
+      const suspendedUntil =
+        user.moderation.suspendedUntil || user.moderation.expiresAt;
       if (suspendedUntil && suspendedUntil > new Date()) {
         const remainingDays = Math.ceil(
           (suspendedUntil - new Date()) / (1000 * 60 * 60 * 24)
@@ -107,6 +108,7 @@ class AuthService {
       }
       user.moderation.status = 'active';
       user.moderation.suspendedUntil = null;
+      user.moderation.expiresAt = null;
     }
 
 
@@ -410,11 +412,8 @@ class AuthService {
 
     logger.info(`Password reset: User found - ${user._id}`);
 
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenHash = crypto
-      .createHash('sha256')
-      .update(resetToken)
-      .digest('hex');
+    const resetToken = generateRandomToken(32);
+    const resetTokenHash = hashToken(resetToken);
 
     await User.findByIdAndUpdate(user._id, {
       'security.passwordResetToken': resetTokenHash,
@@ -433,10 +432,7 @@ class AuthService {
   }
 
   static async resetPassword(resetToken, newPassword) {
-    const resetTokenHash = crypto
-      .createHash('sha256')
-      .update(resetToken)
-      .digest('hex');
+    const resetTokenHash = hashToken(resetToken);
 
     const user = await User.findOne({
       'security.passwordResetToken': resetTokenHash,
@@ -473,11 +469,8 @@ class AuthService {
     }
 
 
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const verificationTokenHash = crypto
-      .createHash('sha256')
-      .update(verificationToken)
-      .digest('hex');
+    const verificationToken = generateRandomToken(32);
+    const verificationTokenHash = hashToken(verificationToken);
 
     await User.findByIdAndUpdate(userId, {
       'security.emailVerificationToken': verificationTokenHash,
@@ -494,10 +487,7 @@ class AuthService {
   }
 
   static async verifyEmail(verificationToken) {
-    const verificationTokenHash = crypto
-      .createHash('sha256')
-      .update(verificationToken)
-      .digest('hex');
+    const verificationTokenHash = hashToken(verificationToken);
 
     const user = await User.findOne({
       'security.emailVerificationToken': verificationTokenHash,

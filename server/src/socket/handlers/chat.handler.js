@@ -1,12 +1,36 @@
 import logger from '../../configs/logger.js';
 
+const getRoomId = value => value?.toString();
+
+const getChatRoomIds = (senderId, receiverId) => {
+  return [
+    `chat_${senderId}_${receiverId}`,
+    `chat_${receiverId}_${senderId}`,
+  ];
+};
+
+const emitToChatRooms = (socket, senderId, receiverId, eventName, payload) => {
+  for (const roomId of getChatRoomIds(senderId, receiverId)) {
+    socket.to(roomId).emit(eventName, payload);
+  }
+};
+
+const emitReadState = (io, senderId, receiverId, payload) => {
+  for (const roomId of getChatRoomIds(senderId, receiverId)) {
+    io.to(roomId).emit('message_read', payload);
+  }
+
+  io.to(getRoomId(receiverId)).emit('message_read', payload);
+  io.to(getRoomId(senderId)).emit('message_read', payload);
+};
+
 export const registerChatHandlers = (io, socket) => {
   // Join Room
   socket.on('join_room', roomId => {
     try {
       if (!roomId) return;
 
-      const roomIdStr = roomId.toString();
+      const roomIdStr = getRoomId(roomId);
       socket.join(roomIdStr);
       logger.info(`User ${socket.id} joined room: ${roomIdStr}`);
 
@@ -30,7 +54,7 @@ export const registerChatHandlers = (io, socket) => {
   socket.on('leave_room', roomId => {
     try {
       if (!roomId) return;
-      const roomIdStr = roomId.toString();
+      const roomIdStr = getRoomId(roomId);
       socket.leave(roomIdStr);
       logger.info(`User ${socket.id} left room: ${roomIdStr}`);
       socket.emit('room_left', { roomId: roomIdStr, success: true });
@@ -51,8 +75,8 @@ export const registerChatHandlers = (io, socket) => {
     }
 
     const { message, receiverId, senderId } = data;
-    const receiverIdStr = receiverId.toString();
-    const senderIdStr = senderId.toString();
+    const receiverIdStr = getRoomId(receiverId);
+    const senderIdStr = getRoomId(senderId);
 
     // Emitting to receiver
     socket.to(receiverIdStr).emit('new_message', message);
@@ -62,11 +86,7 @@ export const registerChatHandlers = (io, socket) => {
       socket.to(senderIdStr).emit('new_message', message);
     }
 
-    // Emit to Rooms
-    const room1 = `chat_${senderIdStr}_${receiverIdStr}`;
-    const room2 = `chat_${receiverIdStr}_${senderIdStr}`;
-    socket.to(room1).emit('new_message', message);
-    socket.to(room2).emit('new_message', message);
+    emitToChatRooms(socket, senderIdStr, receiverIdStr, 'new_message', message);
 
     socket.emit('message_sent', {
       success: true,
@@ -82,13 +102,7 @@ export const registerChatHandlers = (io, socket) => {
     if (!data.messageIds) return;
 
     if (data.receiverId && data.senderId) {
-      const room1 = `chat_${data.senderId}_${data.receiverId}`;
-      const room2 = `chat_${data.receiverId}_${data.senderId}`;
-      io.to(room1).emit('message_read', data);
-      io.to(room2).emit('message_read', data);
-
-      io.to(data.receiverId.toString()).emit('message_read', data);
-      io.to(data.senderId.toString()).emit('message_read', data);
+      emitReadState(io, data.senderId, data.receiverId, data);
     }
     socket.emit('read_confirmed', {
       success: true,
@@ -97,49 +111,19 @@ export const registerChatHandlers = (io, socket) => {
   });
 
   // Typing - support both event names for compatibility
-  socket.on('typing', data => {
-    if (!data.senderId) return;
-    if (data.receiverId) {
-      socket.to(data.receiverId.toString()).emit('user_typing', data);
-      // Also rooms
-      const room1 = `chat_${data.senderId}_${data.receiverId}`;
-      const room2 = `chat_${data.receiverId}_${data.senderId}`;
-      socket.to(room1).emit('user_typing', data);
-      socket.to(room2).emit('user_typing', data);
-    }
-  });
+  const registerTypingEvent = (eventName, targetEvent) => {
+    socket.on(eventName, data => {
+      if (!data.senderId || !data.receiverId) {
+        return;
+      }
 
-  socket.on('user_typing', data => {
-    if (!data.senderId) return;
-    if (data.receiverId) {
-      socket.to(data.receiverId.toString()).emit('user_typing', data);
-      const room1 = `chat_${data.senderId}_${data.receiverId}`;
-      const room2 = `chat_${data.receiverId}_${data.senderId}`;
-      socket.to(room1).emit('user_typing', data);
-      socket.to(room2).emit('user_typing', data);
-    }
-  });
+      socket.to(getRoomId(data.receiverId)).emit(targetEvent, data);
+      emitToChatRooms(socket, data.senderId, data.receiverId, targetEvent, data);
+    });
+  };
 
-  socket.on('stop_typing', data => {
-    if (!data.senderId) return;
-    if (data.receiverId) {
-      socket.to(data.receiverId.toString()).emit('user_stop_typing', data);
-      // Also rooms
-      const room1 = `chat_${data.senderId}_${data.receiverId}`;
-      const room2 = `chat_${data.receiverId}_${data.senderId}`;
-      socket.to(room1).emit('user_stop_typing', data);
-      socket.to(room2).emit('user_stop_typing', data);
-    }
-  });
-
-  socket.on('user_stop_typing', data => {
-    if (!data.senderId) return;
-    if (data.receiverId) {
-      socket.to(data.receiverId.toString()).emit('user_stop_typing', data);
-      const room1 = `chat_${data.senderId}_${data.receiverId}`;
-      const room2 = `chat_${data.receiverId}_${data.senderId}`;
-      socket.to(room1).emit('user_stop_typing', data);
-      socket.to(room2).emit('user_stop_typing', data);
-    }
-  });
+  registerTypingEvent('typing', 'user_typing');
+  registerTypingEvent('user_typing', 'user_typing');
+  registerTypingEvent('stop_typing', 'user_stop_typing');
+  registerTypingEvent('user_stop_typing', 'user_stop_typing');
 };

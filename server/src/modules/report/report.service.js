@@ -430,13 +430,31 @@ class ReportService {
 
       case 'remove_content':
         if (report.targetType === 'post') {
-          await Post.findByIdAndUpdate(report.targetId, {
-            isDeleted: true,
-          }).session(session);
+          const post = await Post.findByIdAndUpdate(
+            report.targetId,
+            { isDeleted: true },
+            { session }
+          );
+          if (post && !post.isDeleted && post.user) {
+            await User.findByIdAndUpdate(
+              post.user,
+              { $inc: { postsCount: -1 } },
+              { session }
+            );
+          }
         } else if (report.targetType === 'comment') {
-          await Comment.findByIdAndUpdate(report.targetId, {
-            isDeleted: true,
-          }).session(session);
+          const comment = await Comment.findByIdAndUpdate(
+            report.targetId,
+            { isDeleted: true },
+            { session }
+          );
+          if (comment && !comment.isDeleted && comment.post) {
+            await Post.findByIdAndUpdate(
+              comment.post,
+              { $inc: { commentsCount: -1 } },
+              { session }
+            );
+          }
         }
         break;
 

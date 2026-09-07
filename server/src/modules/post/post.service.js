@@ -10,6 +10,7 @@ import UserInteraction from '../../models/UserInteraction.js';
 import Follow from '../../models/Follow.js';
 import logger from '../../configs/logger.js';
 import { retryOperation } from '../../utils/retryOperation.js';
+import { escapeRegex } from '../../utils/string.util.js';
 import ApiError from '../../helpers/ApiError.js';
 import NotificationService from '../notification/notification.service.js';
 import MediaService from '../shared/media/media.service.js';
@@ -789,14 +790,17 @@ class PostService {
       ];
     }
 
+    const escapedQuery = escapeRegex(query);
+    const cleanHashtag = escapeRegex(query.replace('#', ''));
+
     const searchQuery = {
       isDeleted: false,
       visibility: 'public',
       'moderation.status': 'approved',
       user: { $nin: excludeUsers },
       $or: [
-        { caption: { $regex: query, $options: 'i' } },
-        { hashtags: { $regex: query.replace('#', ''), $options: 'i' } },
+        { caption: { $regex: escapedQuery, $options: 'i' } },
+        { hashtags: { $regex: cleanHashtag, $options: 'i' } },
       ],
     };
 

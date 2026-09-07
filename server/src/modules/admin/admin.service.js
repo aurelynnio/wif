@@ -7,6 +7,7 @@ import RefreshToken from '../../models/RefreshToken.js';
 import UserSettings from '../../models/UserSettings.js';
 import logger from '../../configs/logger.js';
 import ApiError from '../../helpers/ApiError.js';
+import { escapeRegex } from '../../utils/string.util.js';
 import NotificationService from '../notification/notification.service.js';
 
 import Like from '../../models/Like.js';
@@ -41,10 +42,11 @@ class AdminService {
     const query = {};
 
     if (search) {
+      const escapedSearch = escapeRegex(search);
       query.$or = [
-        { username: { $regex: search, $options: 'i' } },
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
+        { username: { $regex: escapedSearch, $options: 'i' } },
+        { name: { $regex: escapedSearch, $options: 'i' } },
+        { email: { $regex: escapedSearch, $options: 'i' } },
       ];
     }
 
@@ -496,18 +498,20 @@ class AdminService {
         updateData.isDeleted = true;
       }
 
+      const existingPost = await Post.findById(postId).session(session);
+      if (!existingPost) {
+        throw ApiError.notFound('Post not found');
+      }
+
+      const wasDeleted = existingPost.isDeleted;
+
       const post = await Post.findByIdAndUpdate(
         postId,
         { $set: updateData },
         { new: true, session }
       ).populate('user', 'username name avatar');
 
-      if (!post) {
-        throw ApiError.notFound('Post not found');
-
-      }
-
-      if (action === 'reject' || action === 'remove' || action === 'hide') {
+      if ((action === 'reject' || action === 'remove' || action === 'hide') && !wasDeleted) {
         await User.findByIdAndUpdate(post.user._id, {
           $inc: { postsCount: -1 },
         }).session(session);
@@ -625,13 +629,16 @@ class AdminService {
     }
 
     if (action === 'remove') {
+      const wasDeleted = comment.isDeleted;
       comment.isDeleted = true;
       comment.content = '[Nội dung đã bị xóa bởi quản trị viên]';
       await comment.save();
 
-      await Post.findByIdAndUpdate(comment.post, {
-        $inc: { commentsCount: -1 },
-      });
+      if (!wasDeleted) {
+        await Post.findByIdAndUpdate(comment.post, {
+          $inc: { commentsCount: -1 },
+        });
+      }
 
       await NotificationService.publishCreate({
         recipient: comment.user,
@@ -766,6 +773,11 @@ class AdminService {
       postsThisWeek,
       pendingReports,
       totalReports,
+      totalComments,
+      totalLikes,
+      totalFollows,
+      totalSaves,
+      totalShares,
     ] = await Promise.all([
       User.countDocuments(),
       User.countDocuments({ lastActiveAt: { $gte: thisWeek } }),
@@ -777,6 +789,13 @@ class AdminService {
       Post.countDocuments({ createdAt: { $gte: thisWeek }, isDeleted: false }),
       Report.countDocuments({ status: 'pending' }),
       Report.countDocuments(),
+      Comment.countDocuments({ isDeleted: false }),
+      Like.countDocuments(),
+      Follow.countDocuments({ status: 'active' }),
+      SavePost.countDocuments(),
+      Post.aggregate([
+        { $group: { _id: null, total: { $sum: '$sharesCount' } } },
+      ]).then(r => r[0]?.total || 0),
     ]);
 
     return {
@@ -791,6 +810,12 @@ class AdminService {
         total: totalPosts,
         today: postsToday,
         thisWeek: postsThisWeek,
+      },
+      comments: {
+        total: totalComments,
+      },
+      interactions: {
+        total: totalLikes + totalComments + totalFollows + totalSaves + totalShares,
       },
       reports: {
         pending: pendingReports,
@@ -932,12 +957,13 @@ class AdminService {
 
     const interactions = [];
     const skip = (page - 1) * limit;
-    const perType = Math.ceil(limit / 5);
+    const perType = Math.ceil(limit / 4);
+    const perTypeSkip = (page - 1) * perType;
 
     if (!type || type === 'like') {
       const likes = await Like.find()
         .sort({ createdAt: -1 })
-        .skip(type === 'like' ? skip : 0)
+        .skip(type === 'like' ? skip : perTypeSkip)
         .limit(type === 'like' ? limit : perType)
         .populate('user', 'username name avatar')
         .populate({
@@ -967,7 +993,7 @@ class AdminService {
     if (!type || type === 'comment') {
       const comments = await Comment.find({ isDeleted: false })
         .sort({ createdAt: -1 })
-        .skip(type === 'comment' ? skip : 0)
+        .skip(type === 'comment' ? skip : perTypeSkip)
         .limit(type === 'comment' ? limit : perType)
         .populate('user', 'username name avatar')
         .populate({
@@ -998,7 +1024,7 @@ class AdminService {
     if (!type || type === 'follow') {
       const follows = await Follow.find({ status: 'active' })
         .sort({ createdAt: -1 })
-        .skip(type === 'follow' ? skip : 0)
+        .skip(type === 'follow' ? skip : perTypeSkip)
         .limit(type === 'follow' ? limit : perType)
         .populate('follower', 'username name avatar')
         .populate('following', 'username name')
@@ -1024,7 +1050,7 @@ class AdminService {
     if (!type || type === 'save') {
       const saves = await SavePost.find()
         .sort({ createdAt: -1 })
-        .skip(type === 'save' ? skip : 0)
+        .skip(type === 'save' ? skip : perTypeSkip)
         .limit(type === 'save' ? limit : perType)
         .populate('user', 'username name avatar')
         .populate({
@@ -1066,7 +1092,7 @@ class AdminService {
 
     const total = type
       ? stats[type + 's'] || filteredInteractions.length
-      : filteredInteractions.length;
+      : ((stats.likes || 0) + (stats.comments || 0) + (stats.follows || 0) + (stats.saves || 0));
     const totalPages = Math.ceil(total / limit);
 
     return {
@@ -1141,13 +1167,17 @@ class AdminService {
       metadata: { broadcastBy: adminId },
     }));
 
-    await Promise.all(
-      notifications.map(notification =>
-        NotificationService.publishCreate(notification, {
-          source: 'admin.broadcastNotification',
-        })
-      )
-    );
+    const CHUNK_SIZE = 100;
+    for (let i = 0; i < notifications.length; i += CHUNK_SIZE) {
+      const chunk = notifications.slice(i, i + CHUNK_SIZE);
+      await Promise.all(
+        chunk.map(notification =>
+          NotificationService.publishCreate(notification, {
+            source: 'admin.broadcastNotification',
+          })
+        )
+      );
+    }
 
     await this._logAdminAction(
       adminId,

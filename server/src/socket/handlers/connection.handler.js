@@ -1,6 +1,14 @@
 import logger from "../../configs/logger.js";
 import socketService from "../../modules/shared/socket/socket.service.js";
 
+const emitUserStatusChange = (io, userId, status) => {
+  io.emit("user_status_change", {
+    userId,
+    status,
+    timestamp: new Date(),
+  });
+};
+
 export const registerConnectionHandlers = (io, socket) => {
   // Register User (make online)
   socket.on("register_user", (data) => {
@@ -19,11 +27,7 @@ export const registerConnectionHandlers = (io, socket) => {
       socketService.addUser(userId, socket.id);
 
       // Broadcast user online status
-      io.emit("user_status_change", {
-        userId,
-        status: "online",
-        timestamp: new Date(),
-      });
+      emitUserStatusChange(io, userId, "online");
 
       logger.info(`User ${userId} is now online with socket ${socket.id}`);
     } catch (error) {
@@ -46,11 +50,7 @@ export const registerConnectionHandlers = (io, socket) => {
       // Remove from SocketService
       socketService.removeUser(socket.id);
 
-      io.emit("user_status_change", {
-        userId,
-        status: "offline",
-        timestamp: new Date(),
-      });
+      emitUserStatusChange(io, userId, "offline");
       logger.info(`User ${userId} is now offline`);
     }
   });

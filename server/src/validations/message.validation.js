@@ -165,10 +165,8 @@ export const sendMessageBody = Joi.object({
     'any.required': 'Conversation ID là bắt buộc',
     'alternatives.match': 'ID cuộc hội thoại không hợp lệ',
   }),
-  content: Joi.string().trim().min(1).max(2000).required().messages({
-    'string.empty': 'Nội dung tin nhắn không được để trống',
+  content: Joi.string().trim().allow('').max(2000).messages({
     'string.max': 'Nội dung không được quá 2000 ký tự',
-    'any.required': 'Nội dung là bắt buộc',
   }),
   type: Joi.string()
     .valid('text', 'image', 'file', 'video', 'audio')
