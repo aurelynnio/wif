@@ -1,6 +1,21 @@
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useSocketContext } from '@/contexts/useSocketContext';
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+
+const getInitials = name =>
+  (name || '?')
+    .split(' ')
+    .map(w => w?.[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
 const ConversationItem = ({
   conversation,
@@ -59,15 +74,25 @@ const ConversationItem = ({
       )}
 
       <div className="relative flex-shrink-0">
-        <img
-          src={displayUser.avatar || 'https://via.placeholder.com/150'}
-          alt={displayUser.name}
-          className={`w-12 h-12 rounded-full object-cover transition-all duration-300 ${
+        <Avatar
+          className={`size-12 transition-all duration-300 ${
             isActive
               ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-neutral-900'
               : ''
           }`}
-        />
+        >
+          <AvatarImage
+            src={displayUser.avatar || 'https://via.placeholder.com/150'}
+            alt={displayUser.name}
+            loading="lazy"
+            decoding="async"
+          />
+          <AvatarFallback>
+            {getInitials(
+              displayUser.name || displayUser.fullName || displayUser.username
+            )}
+          </AvatarFallback>
+        </Avatar>
         {isOnline && (
           <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success rounded-full ring-2 ring-white dark:ring-neutral-900 shadow-sm" />
         )}
@@ -114,9 +139,9 @@ const ConversationItem = ({
             {lastMessageContent}
           </p>
           {conversation.unreadCount > 0 ? (
-            <span className="min-w-[20px] h-5 px-1.5 flex items-center justify-center text-[10px] font-bold text-white bg-primary rounded-full">
+            <Badge className="min-w-[20px] h-5 px-1.5">
               {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
-            </span>
+            </Badge>
           ) : isUnread ? (
             <div className="w-2 h-2 rounded-full bg-primary" />
           ) : null}

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { X, UserPlus, Check, Loader2, Users } from 'lucide-react';
 import {
@@ -9,10 +9,17 @@ import {
   useUnfollowUser,
 } from '@/hooks/useUserQuery';
 import { notify } from '@/utils/notify';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Empty,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
 
 const FollowList = ({ userId, type = 'followers', isOpen, onClose }) => {
   const navigate = useNavigate();
-  const authUser = useSelector(state => state.auth?.user);
+  const authUser = useAuthStore(state => state.user);
 
   // React Query hooks
   const { data: followersData, isLoading: followersLoading } = useFollowers(
@@ -70,12 +77,15 @@ const FollowList = ({ userId, type = 'followers', isOpen, onClose }) => {
           <h2 className="text-base font-semibold text-black dark:text-white">
             {type === 'followers' ? 'Followers' : 'Following'}
           </h2>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Đóng"
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="rounded-lg text-muted-foreground"
           >
-            <X size={18} className="text-neutral-400" />
-          </button>
+            <X size={18} />
+          </Button>
         </div>
 
         {/* Content */}
@@ -85,17 +95,16 @@ const FollowList = ({ userId, type = 'followers', isOpen, onClose }) => {
               <Loader2 size={32} className="animate-spin text-neutral-400" />
             </div>
           ) : users.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-neutral-500">
-              <Users
-                size={48}
-                className="mb-4 text-neutral-300 dark:text-neutral-600"
-              />
-              <p className="text-base font-medium">
+            <Empty className="py-12">
+              <EmptyMedia>
+                <Users size={48} className="text-muted-foreground/40" />
+              </EmptyMedia>
+              <EmptyTitle>
                 {type === 'followers'
                   ? 'No followers yet'
                   : 'Not following anyone'}
-              </p>
-            </div>
+              </EmptyTitle>
+            </Empty>
           ) : (
             <div className="divide-y divide-neutral-50 dark:divide-neutral-800/50">
               {users.map(user => {
@@ -116,50 +125,53 @@ const FollowList = ({ userId, type = 'followers', isOpen, onClose }) => {
                       className="flex items-center gap-3 flex-1 cursor-pointer"
                       onClick={() => handleUserClick(user)}
                     >
-                      <img
-                        src={
-                          user.avatar ||
-                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
-                        }
-                        alt={user.username}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
+                      <Avatar className="size-12">
+                        <AvatarImage
+                          src={
+                            user.avatar ||
+                            `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
+                          }
+                          alt={user.username}
+                        />
+                        <AvatarFallback>
+                          {(user.username || 'U')[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="min-w-0">
-                        <p className="font-semibold text-black dark:text-white truncate">
+                        <p className="font-semibold text-foreground truncate">
                           {user.fullName || user.name || user.username}
                         </p>
-                        <p className="text-sm text-neutral-500 truncate">
+                        <p className="text-sm text-muted-foreground truncate">
                           @{user.username}
                         </p>
                       </div>
                     </div>
 
                     {user._id !== authUser?._id && (
-                      <button
+                      <Button
+                        variant={isFollowingUser ? 'default' : 'outline'}
                         onClick={() => handleFollow(user._id, isFollowingUser)}
                         disabled={mutationLoading}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                          mutationLoading ? 'opacity-50 cursor-not-allowed' : ''
-                        } ${
+                        className={
                           isFollowingUser
-                            ? 'bg-neutral-200 dark:bg-neutral-800 text-black dark:text-white hover:bg-red-500/10 hover:text-red-500'
-                            : 'bg-black dark:bg-white text-white dark:text-black hover:opacity-90'
-                        }`}
+                            ? 'rounded-full px-4 text-muted-foreground hover:text-red-500'
+                            : 'rounded-full px-4'
+                        }
                       >
                         {mutationLoading ? (
-                          <Loader2 size={14} className="animate-spin" />
+                          <Loader2 data-icon="inline-start" className="animate-spin" />
                         ) : isFollowingUser ? (
                           <>
-                            <Check size={14} />
+                            <Check data-icon="inline-start" />
                             Following
                           </>
                         ) : (
                           <>
-                            <UserPlus size={14} />
+                            <UserPlus data-icon="inline-start" />
                             Follow
                           </>
                         )}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 );
@@ -173,4 +185,3 @@ const FollowList = ({ userId, type = 'followers', isOpen, onClose }) => {
 };
 
 export default FollowList;
-

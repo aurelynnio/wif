@@ -1,4 +1,5 @@
 import { MessageCircle, Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const MainMessage = () => {
   return (
@@ -30,7 +31,8 @@ const MainMessage = () => {
             kết nối ngay bây giờ!
           </p>
 
-          <button
+          <Button
+            size="lg"
             onClick={() => {
               window.dispatchEvent(new CustomEvent('open-new-chat'));
             }}
@@ -41,7 +43,7 @@ const MainMessage = () => {
               size={18}
               className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"
             />
-          </button>
+          </Button>
         </div>
       </div>
 

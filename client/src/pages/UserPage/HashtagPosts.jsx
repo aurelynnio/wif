@@ -15,6 +15,13 @@ import {
 import { useGetPostsByHashtag, useTrendingHashtags } from '@/hooks/usePostsQuery';
 import Post from '@/components/features/feed/Posts/Post';
 import { formatNumber } from '@/utils/numberUtils';
+import { Button } from '@/components/ui/button';
+import {
+  Empty,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from '@/components/ui/empty';
 
 const VIDEO_EXTENSIONS = /\.(mp4|webm|mov|m4v|m3u8|ogg)$/i;
 
@@ -105,35 +112,31 @@ const HashtagPosts = () => {
 
           {/* View Mode Toggle */}
           <div className="flex items-center justify-between">
-            <div className="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1">
-              <button
+            <div className="flex bg-muted rounded-lg p-1">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
                 onClick={() => setViewMode('list')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'list'
-                    ? 'bg-white dark:bg-neutral-700 text-black dark:text-white shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
-                }`}
+                className={viewMode === 'list' ? 'shadow-sm' : 'text-muted-foreground hover:bg-muted'}
               >
                 <List size={16} />
                 List
-              </button>
-              <button
+              </Button>
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
                 onClick={() => setViewMode('grid')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'grid'
-                    ? 'bg-white dark:bg-neutral-700 text-black dark:text-white shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
-                }`}
+                className={viewMode === 'grid' ? 'shadow-sm' : 'text-muted-foreground hover:bg-muted'}
               >
                 <Grid3X3 size={16} />
                 Grid
-              </button>
+              </Button>
             </div>
-            
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
-              <Share2 size={14} />
+
+            <Button size="sm" className="rounded-lg px-3">
+              <Share2 data-icon="inline-start" />
               Share
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -213,6 +216,8 @@ const HashtagPosts = () => {
                           <img
                             src={mediaUrl}
                             alt={`Post media for #${hashtag}`}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                         )
@@ -237,23 +242,21 @@ const HashtagPosts = () => {
           </>
         ) : (
           /* Empty State */
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <div className="w-20 h-20 mb-6 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-              <TrendingUp size={40} className="text-neutral-300 dark:text-neutral-600" />
-            </div>
-            <h2 className="text-xl font-bold text-black dark:text-white mb-2">
-              No posts yet
-            </h2>
-            <p className="text-neutral-500 max-w-sm mb-6">
+          <Empty className="py-16 px-4">
+            <EmptyMedia>
+              <TrendingUp size={40} className="text-muted-foreground/50" />
+            </EmptyMedia>
+            <EmptyTitle>No posts yet</EmptyTitle>
+            <EmptyDescription>
               Be the first to post with #{hashtag} and start the conversation!
-            </p>
+            </EmptyDescription>
             <Link
               to="/explore"
-              className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:opacity-90 transition-opacity"
+              className="mt-2 inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-primary/80"
             >
               Explore more
             </Link>
-          </div>
+          </Empty>
         )}
       </div>
     </div>

@@ -1,13 +1,21 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import { Users, Check, MessageCircle, MoreHorizontal } from 'lucide-react';
 import { useFollowers, useUnfollowUser } from '@/hooks/useUserQuery';
 import { notify } from '@/utils/notify';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Empty,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from '@/components/ui/empty';
 
 const Friends = () => {
-  const authUser = useSelector(state => state.auth?.user);
+  const authUser = useAuthStore(state => state.user);
   const userId = authUser?._id || authUser?.id;
 
   const { data: friendsData, isLoading, refetch } = useFollowers(userId);
@@ -58,13 +66,13 @@ const Friends = () => {
 
       {/* Friends Grid */}
       {friends.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-neutral-500">
-          <Users size={48} className="mb-4 text-neutral-300" />
-          <h2 className="text-lg font-semibold text-black dark:text-white mb-2">
-            No friends yet
-          </h2>
-          <p className="text-sm">Start connecting with people</p>
-        </div>
+        <Empty className="py-20">
+          <EmptyMedia>
+            <Users size={48} className="text-muted-foreground/40" />
+          </EmptyMedia>
+          <EmptyTitle>No friends yet</EmptyTitle>
+          <EmptyDescription>Start connecting with people</EmptyDescription>
+        </Empty>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
           {friends.map(friend => (
@@ -78,16 +86,20 @@ const Friends = () => {
                   to={`/profile/${friend.username || friend._id}`}
                   className="relative flex-shrink-0"
                 >
-                  <img
-                    src={
-                      friend.avatar ||
-                      `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.username}`
-                    }
-                    alt={friend.name || friend.fullName}
-                    className="w-14 h-14 rounded-full object-cover"
-                  />
+                  <Avatar className="size-14">
+                    <AvatarImage
+                      src={
+                        friend.avatar ||
+                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.username}`
+                      }
+                      alt={friend.name || friend.fullName}
+                    />
+                    <AvatarFallback>
+                      {(friend.name || friend.fullName || 'F')[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                   {friend.isOnline && (
-                    <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full" />
+                    <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full ring-2 ring-background" />
                   )}
                   {(friend.verified || friend.isVerified) && !friend.isOnline && (
                     <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-black dark:bg-white flex items-center justify-center">
@@ -116,23 +128,27 @@ const Friends = () => {
 
                 {/* Menu */}
                 <div className="relative">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Tùy chọn bạn bè"
                     onClick={() =>
                       setShowMenu(showMenu === friend._id ? null : friend._id)
                     }
-                    className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                    className="rounded-full text-muted-foreground"
                   >
-                    <MoreHorizontal size={18} className="text-neutral-500" />
-                  </button>
+                    <MoreHorizontal size={18} />
+                  </Button>
 
                   {showMenu === friend._id && (
                     <div className="absolute right-0 top-10 w-48 bg-white dark:bg-neutral-900 rounded-xl overflow-hidden z-10 shadow-lg">
-                      <button
+                      <Button
+                        variant="ghost"
                         onClick={() => handleRemoveFriend(friend._id)}
-                        className="w-full px-4 py-2.5 text-left text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        className="w-full justify-start px-4 py-2.5 h-auto text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
                         Remove friend
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>

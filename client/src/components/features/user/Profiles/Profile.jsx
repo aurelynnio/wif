@@ -17,7 +17,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import Post from '@/components/features/feed/Posts/Post';
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import {
   useSharedPosts,
   useUserPosts,
@@ -34,6 +34,14 @@ import { useCreateConversation } from '@/hooks/useMessageQuery';
 import { notify } from '@/utils/notify';
 import { formatNumber } from '@/utils/numberUtils';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Empty,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from '@/components/ui/empty';
 const FollowList = lazy(() => import('../FollowList/FollowList'));
 
 const Profile = () => {
@@ -41,7 +49,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('posts');
   const [showFollowList, setShowFollowList] = useState(null); // 'followers' | 'following' | null
-  const authUser = useSelector(state => state.auth?.user);
+  const authUser = useAuthStore(state => state.user);
   const profileId = userId || authUser?._id;
   const isOwnProfile =
     !userId || userId === authUser?._id || userId === authUser?.username;
@@ -95,7 +103,9 @@ const Profile = () => {
     if (isOwnProfile) return;
 
     try {
-      const targetUserId = currentProfile?._id || profileId;
+      // Dùng profileId (cùng giá trị với query key useCheckFollow/useProfile)
+      // để cache được invalidate đúng (tránh nút Follow không refresh khi mở bằng username)
+      const targetUserId = profileId;
       if (isFollowing || isFollowPending) {
         await unfollowMutation.mutateAsync(targetUserId);
         notify.success(isFollowing ? 'Đã bỏ theo dõi' : 'Đã hủy yêu cầu theo dõi');
@@ -115,7 +125,6 @@ const Profile = () => {
     isOwnProfile,
     followMutation,
     unfollowMutation,
-    currentProfile,
     followStatus,
   ]);
 
@@ -161,14 +170,8 @@ const Profile = () => {
   }
 
   const isRefreshingProfile = profileFetching && !!currentProfile;
-  const avatarSrc =
-    currentProfile?.avatar?.trim() ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${
-      currentProfile?.username || currentProfile?._id || 'user'
-    }`;
-  const coverSrc =
-    currentProfile?.cover?.trim() ||
-    'https://cdn2.fptshop.com.vn/unsafe/Uploads/images/tin-tuc/168364/Originals/meme-con-meo%20(1).jpg';
+  const avatarSrc = currentProfile?.avatar?.trim() || '';
+  const coverSrc = currentProfile?.cover?.trim() || '';
   const joinedLabel = currentProfile?.createdAt?.slice
     ? currentProfile.createdAt.slice(0, 7)
     : null;
@@ -196,14 +199,13 @@ const Profile = () => {
         }
         if (!userPosts || userPosts.length === 0) {
           return (
-            <div className="flex flex-col items-center justify-center py-16 text-neutral-500 min-h-[300px]">
-              <Grid3X3
-                size={48}
-                className="mb-4 text-neutral-300 dark:text-neutral-600"
-              />
-              <p className="text-lg font-medium">No posts yet</p>
-              <p className="text-sm mt-1">Posts will appear here</p>
-            </div>
+            <Empty className="py-16 min-h-[300px]">
+              <EmptyMedia>
+                <Grid3X3 size={48} className="text-muted-foreground/40" />
+              </EmptyMedia>
+              <EmptyTitle>No posts yet</EmptyTitle>
+              <EmptyDescription>Posts will appear here</EmptyDescription>
+            </Empty>
           );
         }
         return userPosts.map((post, index) => (
@@ -220,14 +222,13 @@ const Profile = () => {
         }
         if (!sharedPosts || sharedPosts.length === 0) {
           return (
-            <div className="flex flex-col items-center justify-center py-16 text-neutral-500 min-h-[300px]">
-              <Share2
-                size={48}
-                className="mb-4 text-neutral-300 dark:text-neutral-600"
-              />
-              <p className="text-lg font-medium">No shared posts</p>
-              <p className="text-sm mt-1">Posts you share will appear here</p>
-            </div>
+            <Empty className="py-16 min-h-[300px]">
+              <EmptyMedia>
+                <Share2 size={48} className="text-muted-foreground/40" />
+              </EmptyMedia>
+              <EmptyTitle>No shared posts</EmptyTitle>
+              <EmptyDescription>Posts you share will appear here</EmptyDescription>
+            </Empty>
           );
         }
         return sharedPosts.map((post, index) => (
@@ -244,14 +245,13 @@ const Profile = () => {
         }
         if (!likedPosts || likedPosts.length === 0) {
           return (
-            <div className="flex flex-col items-center justify-center py-16 text-neutral-500 min-h-[300px]">
-              <Heart
-                size={48}
-                className="mb-4 text-neutral-300 dark:text-neutral-600"
-              />
-              <p className="text-lg font-medium">No liked posts yet</p>
-              <p className="text-sm mt-1">Posts you like will appear here</p>
-            </div>
+            <Empty className="py-16 min-h-[300px]">
+              <EmptyMedia>
+                <Heart size={48} className="text-muted-foreground/40" />
+              </EmptyMedia>
+              <EmptyTitle>No liked posts yet</EmptyTitle>
+              <EmptyDescription>Posts you like will appear here</EmptyDescription>
+            </Empty>
           );
         }
         return Array.isArray(likedPosts)
@@ -270,14 +270,13 @@ const Profile = () => {
         }
         if (!savedPosts || savedPosts.length === 0) {
           return (
-            <div className="flex flex-col items-center justify-center py-16 text-neutral-500 min-h-[300px]">
-              <Bookmark
-                size={48}
-                className="mb-4 text-neutral-300 dark:text-neutral-600"
-              />
-              <p className="text-lg font-medium">No saved posts yet</p>
-              <p className="text-sm mt-1">Save posts to view them later</p>
-            </div>
+            <Empty className="py-16 min-h-[300px]">
+              <EmptyMedia>
+                <Bookmark size={48} className="text-muted-foreground/40" />
+              </EmptyMedia>
+              <EmptyTitle>No saved posts yet</EmptyTitle>
+              <EmptyDescription>Save posts to view them later</EmptyDescription>
+            </Empty>
           );
         }
         return savedPosts.map((post, index) => (
@@ -292,183 +291,211 @@ const Profile = () => {
   return (
     <div className="w-full max-w-2xl mx-auto">
       {isRefreshingProfile && (
-        <div className="sticky top-0 z-10 flex justify-end py-2">
-          <div className="flex items-center gap-2 text-xs text-neutral-500 bg-white/80 dark:bg-neutral-900/70 backdrop-blur px-3 py-1.5 rounded-full border border-neutral-200/60 dark:border-neutral-800">
+        <div className="sticky top-0 z-20 flex justify-end py-2">
+          <div className="flex items-center gap-2 text-xs text-neutral-500 bg-white/80 dark:bg-neutral-900/70 backdrop-blur px-3 py-1.5 rounded-full border border-neutral-200/60 dark:border-neutral-800 shadow-sm">
             <Loader2 size={14} className="animate-spin" />
             Updating profile
           </div>
         </div>
       )}
-      {/* Cover Image */}
-      <div className="h-40 sm:h-48 bg-neutral-100 dark:bg-neutral-800 relative">
-        <img
-          src={coverSrc}
-          alt="Cover"
-          className="w-full h-full object-cover"
-          onError={e => {
-            e.currentTarget.src =
-              'https://cdn2.fptshop.com.vn/unsafe/Uploads/images/tin-tuc/168364/Originals/meme-con-meo%20(1).jpg';
-          }}
-        />
-        {/* Avatar - positioned at bottom of cover */}
-        <div className="absolute -bottom-12 sm:-bottom-16 left-4">
+      {/* Cover Image / Modern Gradient Banner */}
+      <div className="h-44 sm:h-52 bg-gradient-to-tr from-slate-900 via-indigo-950 to-blue-900 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-800 relative overflow-hidden rounded-b-2xl sm:rounded-2xl shadow-sm">
+        {coverSrc ? (
           <img
-            src={avatarSrc}
-            alt={currentProfile?.username}
-            className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover bg-white dark:bg-neutral-900"
+            src={coverSrc}
+            alt="Cover"
+            className="w-full h-full object-cover"
             onError={e => {
-              const seed = currentProfile?.username || currentProfile?._id || 'user';
-              e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
+              e.currentTarget.style.display = 'none';
             }}
           />
+        ) : (
+          <div className="w-full h-full relative">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-500/20 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-blue-500/20 via-transparent to-transparent" />
+            <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:20px_20px]" />
+          </div>
+        )}
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+
+        {/* Avatar - positioned at bottom of cover */}
+        <div className="absolute -bottom-12 sm:-bottom-16 left-6 z-10">
+          <Avatar className="size-24 sm:size-32 rounded-full ring-4 ring-white dark:ring-neutral-900 shadow-2xl bg-white dark:bg-neutral-900">
+            <AvatarImage
+              src={avatarSrc || undefined}
+              alt={currentProfile?.name || currentProfile?.username || 'Avatar'}
+              className="object-cover"
+            />
+            <AvatarFallback className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white font-bold text-3xl sm:text-4xl select-none">
+              {(currentProfile?.name || currentProfile?.username || 'U')[0]?.toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
         </div>
       </div>
 
       {/* Profile Header */}
-      <div className="px-4 pb-4 pt-20">
+      <div className="px-6 pb-5 pt-16 sm:pt-20">
         {/* Actions */}
         <div className="flex justify-end mb-4">
           <div className="flex items-center flex-wrap gap-2">
             {isOwnProfile ? (
-              <button
+              <Button
+                variant="outline"
                 onClick={() => navigate('/settings/profile')}
-                className="px-4 py-2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white text-sm font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                className="rounded-full px-5 font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shadow-sm"
               >
                 Edit Profile
-              </button>
+              </Button>
             ) : (
               <>
-                <button className="p-2 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
-                  <MoreHorizontal size={18} className="text-neutral-500" />
-                </button>
-                <button
-                  onClick={handleMessage}
-                  className="p-2 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full size-9 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700"
                 >
-                  <MessageCircle size={18} className="text-neutral-500" />
-                </button>
-                <button
+                  <MoreHorizontal size={18} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleMessage}
+                  className="rounded-full size-9 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                  title="Nhắn tin"
+                >
+                  <MessageCircle size={18} />
+                </Button>
+                <Button
+                  variant={isFollowing || isFollowPending ? 'secondary' : 'default'}
                   onClick={handleFollow}
-                  disabled={
-                    followMutation.isPending || unfollowMutation.isPending
-                  }
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    followMutation.isPending || unfollowMutation.isPending
-                      ? 'opacity-50 cursor-not-allowed'
-                      : ''
-                  } ${
+                  disabled={followMutation.isPending || unfollowMutation.isPending}
+                  className={`rounded-full px-5 font-semibold transition-all shadow-sm ${
                     isFollowing || isFollowPending
-                      ? 'bg-neutral-200 dark:bg-neutral-800 text-black dark:text-white hover:bg-red-500/10 hover:text-red-500'
-                      : 'bg-black dark:bg-white text-white dark:text-black hover:opacity-90'
+                      ? 'hover:text-red-600 dark:hover:text-red-400'
+                      : ''
                   }`}
                 >
                   {followMutation.isPending || unfollowMutation.isPending ? (
                     <Loader2 size={16} className="animate-spin" />
                   ) : isFollowing ? (
                     <>
-                      <Check size={16} />
+                      <Check data-icon="inline-start" size={16} />
                       Following
                     </>
                   ) : isFollowPending ? (
                     <>
-                      <UserMinus size={16} />
+                      <UserMinus data-icon="inline-start" size={16} />
                       Requested
                     </>
                   ) : (
                     <>
-                      <UserPlus size={16} />
+                      <UserPlus data-icon="inline-start" size={16} />
                       Follow
                     </>
                   )}
-                </button>
+                </Button>
               </>
             )}
           </div>
         </div>
 
         {/* User Info */}
-        <div className="space-y-3">
+        <div className="space-y-3.5">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-black dark:text-white">
-                {currentProfile?.name}
+              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+                {currentProfile?.name || 'User'}
               </h1>
               {(currentProfile?.verified || currentProfile?.isVerified) && (
-                <div className="w-4 h-4 rounded-full bg-black dark:bg-white flex items-center justify-center">
-                  <Check size={12} className="text-white dark:text-black" />
+                <div className="size-4 rounded-full bg-blue-500 flex items-center justify-center text-white" title="Verified">
+                  <Check size={10} strokeWidth={3} />
                 </div>
               )}
             </div>
-            <p className="text-neutral-500">@{currentProfile?.username}</p>
+            <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+              @{currentProfile?.username || 'username'}
+            </p>
           </div>
 
           {currentProfile?.bio && currentProfile?.bio.trim() !== '' ? (
-            <p className="text-black dark:text-white whitespace-pre-line">
+            <p className="text-neutral-700 dark:text-neutral-200 whitespace-pre-line text-sm leading-relaxed max-w-xl">
               {currentProfile?.bio}
             </p>
           ) : (
-            <p className="text-neutral-500 italic">No bio yet.</p>
+            <p className="text-neutral-400 dark:text-neutral-500 italic text-sm">
+              Chưa có tiểu sử.
+            </p>
           )}
 
           {/* Meta Info */}
-          <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-500">
+          <div className="flex flex-wrap items-center gap-y-2 gap-x-5 text-sm text-neutral-500 dark:text-neutral-400 pt-0.5">
             {currentProfile?.location && (
-              <span className="flex items-center gap-1">
-                <MapPin size={14} />
+              <span className="flex items-center gap-1.5">
+                <MapPin size={15} className="text-neutral-400" />
                 {currentProfile?.location}
               </span>
             )}
             {currentProfile?.website && (
               <a
-                href={currentProfile?.website}
+                href={
+                  currentProfile.website.startsWith('http')
+                    ? currentProfile.website
+                    : `https://${currentProfile.website}`
+                }
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-black dark:text-white hover:underline"
+                className="flex items-center gap-1.5 text-primary hover:underline font-medium"
               >
-                <LinkIcon size={14} />
-                {currentProfile?.website.replace('https://', '')}
+                <LinkIcon size={15} />
+                {currentProfile?.website.replace(/^https?:\/\//, '')}
               </a>
             )}
-            <span className="flex items-center gap-1">
-              <Calendar size={14} />
+            <span className="flex items-center gap-1.5">
+              <Calendar size={15} className="text-neutral-400" />
               Joined {joinedLabel || '—'}
             </span>
           </div>
 
           {/* Stats */}
-          <div className="flex items-center flex-wrap gap-4">
+          <div className="flex items-center flex-wrap gap-6 pt-1">
             <button
+              type="button"
               onClick={() => setShowFollowList('following')}
-              className="hover:underline"
+              className="flex items-center gap-1.5 hover:underline focus:outline-none group text-sm"
             >
-              <span className="font-bold text-black dark:text-white">
+              <span className="font-bold text-neutral-900 dark:text-white">
                 {formatNumber(currentProfile?.followingCount)}
-              </span>{' '}
-              <span className="text-neutral-500">Following</span>
+              </span>
+              <span className="text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-300">
+                Following
+              </span>
             </button>
             <button
+              type="button"
               onClick={() => setShowFollowList('followers')}
-              className="hover:underline"
+              className="flex items-center gap-1.5 hover:underline focus:outline-none group text-sm"
             >
-              <span className="font-bold text-black dark:text-white">
+              <span className="font-bold text-neutral-900 dark:text-white">
                 {formatNumber(currentProfile?.followersCount)}
-              </span>{' '}
-              <span className="text-neutral-500">Followers</span>
+              </span>
+              <span className="text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-300">
+                Followers
+              </span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-neutral-50 dark:bg-neutral-800/30 rounded-t-xl overflow-hidden mt-4">
+      <div className="flex bg-muted rounded-t-xl overflow-hidden mt-4">
         {tabs.map(tab => (
-          <button
+          <Button
             key={tab.id}
+            variant="ghost"
             onClick={() => setActiveTab(tab.id)}
-            className={`relative flex-1 flex items-center justify-center gap-2 py-4 text-sm font-medium transition-colors ${
+            className={`relative flex-1 flex items-center justify-center gap-2 py-4 h-auto text-sm font-medium transition-colors rounded-none ${
               activeTab === tab.id
-                ? 'text-black dark:text-white'
-                : 'text-neutral-500 hover:text-black dark:hover:text-white'
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <tab.icon size={16} className="relative z-10" />
@@ -480,7 +507,7 @@ const Profile = () => {
                 transition={{ type: 'spring', stiffness: 500, damping: 35 }}
               />
             )}
-          </button>
+          </Button>
         ))}
       </div>
 

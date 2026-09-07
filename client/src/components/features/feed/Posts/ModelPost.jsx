@@ -1,9 +1,13 @@
 import { useState, useRef, useMemo, useEffect, lazy, Suspense } from 'react';
 const EmojiPicker = lazy(() => import('emoji-picker-react'));
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import { Image, X, Smile, Sparkles, Send, Video, Hash } from 'lucide-react';
 import { notify } from '@/utils/notify';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 
 import {
   useCreatePost,
@@ -13,7 +17,7 @@ import {
 import { PRIVACY_OPTIONS } from '@/constants/privacy';
 
 const ModelPost = ({ closeModal, editPost = null }) => {
-  const { user: authUser } = useSelector(state => state.auth);
+  const authUser = useAuthStore(state => state.user);
   const currentUser = authUser?.user || authUser;
 
   const createPostMutation = useCreatePost();
@@ -64,7 +68,6 @@ const ModelPost = ({ closeModal, editPost = null }) => {
     };
   }, [previewMedia]);
 
-
   const onEmojiClick = emojiObject => {
     setCaption(prev => prev + emojiObject.emoji);
   };
@@ -105,7 +108,6 @@ const ModelPost = ({ closeModal, editPost = null }) => {
     event.target.value = '';
   };
 
-
   const removeMedia = (index, isExisting) => {
     if (isExisting) {
       setExistingMedia(prev => prev.filter((_, i) => i !== index));
@@ -115,7 +117,9 @@ const ModelPost = ({ closeModal, editPost = null }) => {
   };
 
   const handlePost = async () => {
-    if (!caption.trim() && mediaFiles.length === 0) return;
+    // Cho phép lưu bài khi chỉ giữ lại media cũ (trường hợp edit)
+    if (!caption.trim() && mediaFiles.length === 0 && existingMedia.length === 0)
+      return;
 
     const formData = new FormData();
     formData.append('caption', caption.trim());
@@ -147,9 +151,6 @@ const ModelPost = ({ closeModal, editPost = null }) => {
   const canPost =
     caption.trim() || mediaFiles.length > 0 || existingMedia.length > 0;
 
-  // Combine media for preview
-  
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm pt-[8vh] px-4 overflow-y-auto"
@@ -161,12 +162,15 @@ const ModelPost = ({ closeModal, editPost = null }) => {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-800">
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Đóng"
             onClick={closeModal}
-            className="p-2 -ml-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="-ml-2 text-muted-foreground"
           >
-            <X size={18} className="text-neutral-400" />
-          </button>
+            <X />
+          </Button>
           <h2 className="text-sm font-medium text-black dark:text-white flex items-center gap-2">
             <Sparkles size={14} className="text-neutral-500" />
             {editPost ? 'Edit Post' : 'Create Post'}
@@ -195,16 +199,18 @@ const ModelPost = ({ closeModal, editPost = null }) => {
                 </p>
                 {/* Privacy selector */}
                 <div className="relative">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowPrivacyMenu(!showPrivacyMenu)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 mt-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-xs font-medium text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                    className="flex items-center gap-1.5 px-2.5 py-1 mt-1 rounded-lg bg-muted text-xs font-medium text-muted-foreground"
                   >
                     {currentPrivacy && <currentPrivacy.icon size={12} />}
                     <span>{currentPrivacy?.label}</span>
                     <svg viewBox="0 0 24 24" className="w-3 h-3 fill-current">
                       <path d="M3.543 8.96l1.414-1.42L12 14.59l7.043-7.05 1.414 1.42L12 17.41 3.543 8.96z" />
                     </svg>
-                  </button>
+                  </Button>
 
                   {/* Privacy dropdown */}
                   {showPrivacyMenu && (
@@ -239,11 +245,11 @@ const ModelPost = ({ closeModal, editPost = null }) => {
               </div>
 
               {/* Text area */}
-              <textarea
+              <Textarea
                 value={caption}
                 onChange={e => setCaption(e.target.value)}
                 placeholder="What's on your mind?"
-                className="w-full h-32 bg-transparent text-content dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 resize-none outline-none text-base"
+                className="w-full h-32 border-0 rounded-none bg-transparent px-0 py-0 resize-none text-base shadow-none focus-visible:ring-0 focus-visible:border-0 placeholder:text-muted-foreground"
                 autoFocus
               />
 
@@ -312,7 +318,7 @@ const ModelPost = ({ closeModal, editPost = null }) => {
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-neutral-200 dark:bg-neutral-800 mx-4" />
+        <Separator className="mx-4" />
 
         {/* Action bar */}
         <div className="flex items-center justify-between px-4 py-3">
@@ -326,37 +332,34 @@ const ModelPost = ({ closeModal, editPost = null }) => {
               className="hidden"
               onChange={handleMediaChange}
             />
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group"
+              className="text-muted-foreground"
             >
-              <Image
-                size={18}
-                className="text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors"
-              />
-            </button>
-            <button
+              <Image />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => {
                 fileInputRef.current.accept = 'video/*';
                 fileInputRef.current?.click();
               }}
-              className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group"
+              className="text-muted-foreground"
             >
-              <Video
-                size={18}
-                className="text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors"
-              />
-            </button>
+              <Video />
+            </Button>
             <div className="relative">
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group"
+                className="text-muted-foreground"
               >
-                <Smile
-                  size={18}
-                  className="text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors"
-                />
-              </button>
+                <Smile />
+              </Button>
               {showEmojiPicker && (
                 <div className="absolute bottom-full left-0 mb-2 z-20">
                   <div
@@ -400,24 +403,20 @@ const ModelPost = ({ closeModal, editPost = null }) => {
                 {caption.length}/280
               </span>
             )}
-            <button
+            <Button
               onClick={handlePost}
               disabled={createLoading || !canPost}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                canPost && !createLoading
-                  ? 'bg-primary text-primary-foreground hover:opacity-90'
-                  : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-400 cursor-not-allowed'
-              }`}
+              className="rounded-full"
             >
               {createLoading ? (
-                <div className="w-4 h-4 border-2 border-white dark:border-black border-t-transparent rounded-full animate-spin" />
+                <Spinner />
               ) : (
                 <>
-                  <Send size={14} />
+                  <Send data-icon="inline-start" />
                   <span>{editPost ? 'Update' : 'Post'}</span>
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -469,13 +468,15 @@ const HashtagSuggestions = ({ caption, setCaption }) => {
       </div>
       <div className="flex flex-wrap gap-2">
         {hashtags.slice(0, 6).map(tag => (
-          <button
+          <Button
             key={tag._id}
+            variant="outline"
+            size="sm"
             onClick={() => handleHashtagClick(tag.name)}
-            className="px-2.5 py-1 text-xs font-medium rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20"
+            className="rounded-full text-xs text-muted-foreground hover:text-primary hover:border-primary/20"
           >
             #{tag.name}
-          </button>
+          </Button>
         ))}
       </div>
     </div>
@@ -483,4 +484,3 @@ const HashtagSuggestions = ({ caption, setCaption }) => {
 };
 
 export default ModelPost;
-

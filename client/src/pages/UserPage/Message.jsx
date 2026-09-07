@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Outlet, useParams } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import { Search, Settings, MessageCircle, Loader2, Users } from 'lucide-react';
 import {
   useConversations,
@@ -11,6 +11,8 @@ import { useSearchUsers } from '@/hooks/useSearchQuery';
 import ConversationItem from '@/components/features/chat/ConversationItem';
 import CreateGroupModal from '@/components/features/chat/CreateGroupModal';
 import { useDebounce } from '@/hooks/useDebounce';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 function Message() {
   const navigate = useNavigate();
@@ -23,7 +25,7 @@ function Message() {
     [conversationsData]
   );
 
-  const { user } = useSelector(state => state.auth);
+  const user = useAuthStore(state => state.user);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showGroupModal, setShowGroupModal] = useState(false);
@@ -154,16 +156,24 @@ function Message() {
               Tin nhắn
             </h1>
             <div className="flex items-center gap-1">
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setShowGroupModal(true)}
-                className="yb-btn-ghost p-2.5 rounded-full transition-all text-secondary hover:text-primary"
+                className="rounded-full text-secondary hover:text-primary"
+                aria-label="Tạo nhóm chat"
                 title="Tạo nhóm chat"
               >
                 <Users size={22} />
-              </button>
-              <button className="yb-btn-ghost p-2.5 rounded-full transition-all text-secondary hover:text-primary">
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full text-secondary hover:text-primary"
+                aria-label="Cài đặt"
+              >
                 <Settings size={22} />
-              </button>
+              </Button>
             </div>
           </div>
           {/* Search */}
@@ -172,12 +182,12 @@ function Message() {
               size={18}
               className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-primary transition-colors"
             />
-            <input
+            <Input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Tìm kiếm cuộc trò chuyện..."
-              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-surface-secondary text-content border border-transparent focus:border-border-focus placeholder:text-text-tertiary text-sm focus:outline-none transition-all duration-300"
+              className="pl-11 pr-4 py-3 rounded-2xl bg-surface-secondary text-content border border-transparent focus:border-border-focus placeholder:text-text-tertiary"
             />
           </div>
         </div>

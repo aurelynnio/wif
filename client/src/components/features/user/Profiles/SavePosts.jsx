@@ -4,6 +4,13 @@ import Post from '@/components/features/feed/Posts/Post';
 import { useSavedPosts, useToggleSave } from '@/hooks/usePostsQuery';
 import { notify } from '@/utils/notify';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
+import { Button } from '@/components/ui/button';
+import {
+  Empty,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from '@/components/ui/empty';
 
 const VIDEO_EXTENSIONS = /\.(mp4|webm|mov|m4v|m3u8|ogg)$/i;
 
@@ -35,7 +42,11 @@ const SavePosts = () => {
   const confirmUnsave = async () => {
     if (!selectedPostId) return;
     try {
-      await toggleSaveMutation.mutateAsync(selectedPostId);
+      // useToggleSave cần { postId, isSaved }; bài đang được lưu nên isSaved=true (=> DELETE)
+      await toggleSaveMutation.mutateAsync({
+        postId: selectedPostId,
+        isSaved: true,
+      });
       notify.success('Đã bỏ lưu bài viết');
       setShowDeleteModal(false);
       setSelectedPostId(null);
@@ -70,26 +81,32 @@ const SavePosts = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="List view"
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-colors ${
+              className={
                 viewMode === 'list'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-              }`}
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/80'
+                  : 'text-muted-foreground hover:bg-muted'
+              }
             >
               <List size={18} />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Grid view"
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition-colors ${
+              className={
                 viewMode === 'grid'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-              }`}
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/80'
+                  : 'text-muted-foreground hover:bg-muted'
+              }
             >
               <Grid size={18} />
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -100,13 +117,13 @@ const SavePosts = () => {
           <LoadingSpinner size="md" />
         </div>
       ) : posts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-neutral-500">
-          <Bookmark size={48} className="mb-4 text-neutral-300" />
-          <h2 className="text-lg font-semibold text-content dark:text-white mb-2">
-            No saved posts
-          </h2>
-          <p className="text-sm">Posts you save will appear here</p>
-        </div>
+        <Empty className="py-20">
+          <EmptyMedia>
+            <Bookmark size={48} className="text-muted-foreground/40" />
+          </EmptyMedia>
+          <EmptyTitle>No saved posts</EmptyTitle>
+          <EmptyDescription>Posts you save will appear here</EmptyDescription>
+        </Empty>
       ) : viewMode === 'list' ? (
         <div className="divide-y divide-neutral-50 dark:divide-neutral-800/50">
           {posts.map(post => {
@@ -114,12 +131,15 @@ const SavePosts = () => {
             return (
               <div key={actualPost._id} className="relative group">
                 <Post data={actualPost} />
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => handleUnsave(actualPost._id)}
-                  className="absolute top-4 right-4 p-2 rounded-full bg-white dark:bg-neutral-800 shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 dark:hover:bg-red-900/20"
+                  aria-label="Bỏ lưu bài viết"
+                  className="absolute top-4 right-4 rounded-full bg-white dark:bg-neutral-800 shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 text-red-500"
                 >
-                  <Trash2 size={16} className="text-red-500" />
-                </button>
+                  <Trash2 size={16} />
+                </Button>
               </div>
             );
           })}
@@ -152,6 +172,8 @@ const SavePosts = () => {
                     <img
                       src={mediaUrl}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover"
                     />
                   )
@@ -163,12 +185,15 @@ const SavePosts = () => {
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Bỏ lưu bài viết"
                     onClick={() => handleUnsave(actualPost._id)}
-                    className="p-2 rounded-full bg-white/20 hover:bg-red-500 transition-colors"
+                    className="rounded-full bg-white/20 text-white hover:bg-red-500 hover:text-white"
                   >
-                    <Trash2 size={20} className="text-white" />
-                  </button>
+                    <Trash2 size={20} />
+                  </Button>
                 </div>
               </div>
             );
@@ -184,27 +209,32 @@ const SavePosts = () => {
               <h3 className="text-lg font-bold text-content dark:text-white">
                 Remove from saved?
               </h3>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Đóng"
                 onClick={() => setShowDeleteModal(false)}
-                className="p-1 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                className="rounded-full text-muted-foreground"
               >
-                <X size={20} className="text-neutral-500" />
-              </button>
+                <X size={20} />
+              </Button>
             </div>
             <p className="text-neutral-500 mb-6">
               This post will be removed from your saved items.
             </p>
             <div className="flex items-center gap-3">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-2.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-content dark:text-white font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                className="flex-1 rounded-full px-4 py-2.5 h-auto"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="destructive"
                 onClick={confirmUnsave}
                 disabled={toggleSaveMutation.isPending}
-                className="flex-1 px-4 py-2.5 rounded-full bg-red-500 text-white font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 rounded-full px-4 py-2.5 h-auto"
               >
                 {toggleSaveMutation.isPending ? (
                   <>
@@ -214,7 +244,7 @@ const SavePosts = () => {
                 ) : (
                   'Remove'
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

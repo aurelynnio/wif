@@ -15,6 +15,14 @@ import {
   getNotificationContent,
 } from '@/utils/notificationUtils';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Empty,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from '@/components/ui/empty';
 
 const Notifications = () => {
   const [activeFilter, setActiveFilter] = useState('all');
@@ -80,12 +88,14 @@ const Notifications = () => {
             </div>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={handleMarkAllRead}
-                  className="text-sm text-content dark:text-white font-medium hover:underline"
+                  className="text-content dark:text-white font-medium hover:bg-muted"
                 >
                   Đánh dấu tất cả đã đọc
-                </button>
+                </Button>
               )}
               <Link
                 to="/settings/notification"
@@ -100,17 +110,19 @@ const Notifications = () => {
           {/* Filters */}
           <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
             {filters.map(filter => (
-              <button
+              <Button
                 key={filter.id}
+                size="sm"
+                variant={activeFilter === filter.id ? 'default' : 'ghost'}
                 onClick={() => handleFilterChange(filter.id)}
-                className={`px-4 py-1.5 text-sm font-medium rounded-full whitespace-nowrap transition-colors ${
+                className={
                   activeFilter === filter.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'
-                }`}
+                    ? 'rounded-full px-4 whitespace-nowrap'
+                    : 'rounded-full px-4 whitespace-nowrap text-muted-foreground hover:bg-muted'
+                }
               >
                 {filter.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -122,13 +134,13 @@ const Notifications = () => {
           <LoadingSpinner size="md" />
         </div>
       ) : filteredNotifications.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-neutral-500">
-          <Bell size={48} className="mb-4 text-neutral-300" />
-          <h2 className="text-lg font-semibold text-content dark:text-white mb-2">
-            Không có thông báo nào
-          </h2>
-          <p className="text-sm">Bạn đã cập nhật tất cả!</p>
-        </div>
+        <Empty className="py-20">
+          <EmptyMedia>
+            <Bell size={48} className="text-muted-foreground/40" />
+          </EmptyMedia>
+          <EmptyTitle>Không có thông báo nào</EmptyTitle>
+          <EmptyDescription>Bạn đã cập nhật tất cả!</EmptyDescription>
+        </Empty>
       ) : (
         <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
           {filteredNotifications.map(notif => {
@@ -149,11 +161,15 @@ const Notifications = () => {
                     to={`/profile/${sender.username}`}
                     onClick={e => e.stopPropagation()}
                   >
-                    <img
-                      src={sender.avatar || 'https://via.placeholder.com/40'}
-                      alt={sender.name}
-                      className="w-12 h-12 rounded-full object-cover border-2 border-neutral-200 dark:border-neutral-700"
-                    />
+                    <Avatar className="size-12 ring-2 ring-border">
+                      <AvatarImage
+                        src={sender.avatar || 'https://via.placeholder.com/40'}
+                        alt={sender.name}
+                      />
+                      <AvatarFallback>
+                        {(sender.name || 'U')[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                   </Link>
                   <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white dark:bg-neutral-900 flex items-center justify-center border border-neutral-200 dark:border-neutral-700">
                     {getNotificationIcon(notif.type)}
@@ -212,17 +228,18 @@ const Notifications = () => {
           {/* Load More Trigger */}
           {hasNextPage && (
             <div className="flex justify-center p-4">
-              <button
+              <Button
+                variant="link"
                 onClick={() => fetchNextPage()}
                 disabled={isFetchingNextPage}
-                className="text-sm text-blue-500 hover:underline"
+                className="text-sm text-blue-500"
               >
                 {isFetchingNextPage ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 size={16} className="animate-spin" />
                 ) : (
                   'Xem thêm'
                 )}
-              </button>
+              </Button>
             </div>
           )}
         </div>

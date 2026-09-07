@@ -1,8 +1,17 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
-import { FileText, PenSquare, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { FileText, PenSquare } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import Post from './Post';
 import { useHomeFeed } from '@/hooks/useFeedQuery';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import {
+  Empty,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from '@/components/ui/empty';
 
 const PostLists = ({ activeTab = 'forYou', onOpenComments, scrollRef }) => {
   const [activeOptionsPostId, setActiveOptionsPostId] = useState(null);
@@ -31,18 +40,29 @@ const PostLists = ({ activeTab = 'forYou', onOpenComments, scrollRef }) => {
   );
 
   const totalCount = hasNextPage ? displayPosts.length + 1 : displayPosts.length;
+
+  // Resolve & cache the scroll container once instead of calling
+  // getComputedStyle on every virtualizer scroll/measure tick.
+  const scrollContainerRef = useRef(null);
+  const getScrollElement = useCallback(() => {
+    if (scrollContainerRef.current) return scrollContainerRef.current;
+    if (typeof window === 'undefined') return null;
+    const el = scrollRef?.current;
+    const fallback = document.scrollingElement || document.documentElement;
+    let resolved = fallback;
+    if (el) {
+      const style = window.getComputedStyle(el);
+      const canScroll =
+        style.overflowY === 'auto' || style.overflowY === 'scroll';
+      if (canScroll) resolved = el;
+    }
+    scrollContainerRef.current = resolved;
+    return resolved;
+  }, [scrollRef]);
+
   const rowVirtualizer = useVirtualizer({
     count: totalCount,
-    getScrollElement: () => {
-      if (typeof window === 'undefined') return null;
-      const el = scrollRef?.current;
-      if (!el) return document.scrollingElement || document.documentElement;
-      const style = window.getComputedStyle(el);
-      const canScroll = style.overflowY === 'auto' || style.overflowY === 'scroll';
-      return canScroll
-        ? el
-        : document.scrollingElement || document.documentElement;
-    },
+    getScrollElement,
     estimateSize: () => 560,
     overscan: 5,
   });
@@ -68,7 +88,7 @@ const PostLists = ({ activeTab = 'forYou', onOpenComments, scrollRef }) => {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+        <Spinner className="size-8 text-muted-foreground" />
       </div>
     );
   }
@@ -85,34 +105,34 @@ const PostLists = ({ activeTab = 'forYou', onOpenComments, scrollRef }) => {
         <p className="text-xs text-neutral-500 text-center max-w-xs mb-4">
           {error?.message || 'Không thể tải bài viết'}
         </p>
-        <button
+        <Button
           onClick={() => refetch()}
-          className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-full hover:opacity-90 transition-opacity"
+          className="rounded-full"
         >
           Thử lại
-        </button>
+        </Button>
       </div>
     );
   }
 
   if (!displayPosts || displayPosts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4">
-        <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
-          <FileText size={28} className="text-neutral-400" />
-        </div>
-        <h3 className="text-base font-medium text-black dark:text-white mb-2">
-          No posts yet
-        </h3>
-        <p className="text-xs text-neutral-500 text-center max-w-xs mb-4">
+      <Empty className="py-10">
+        <EmptyMedia variant="icon">
+          <FileText />
+        </EmptyMedia>
+        <EmptyTitle>No posts yet</EmptyTitle>
+        <EmptyDescription>
           When there are posts, they'll show up here. Be the first to share
           something!
-        </p>
-        <button className="flex items-center gap-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-full hover:opacity-90 transition-opacity">
-          <PenSquare size={14} />
-          Create Post
-        </button>
-      </div>
+        </EmptyDescription>
+        <EmptyContent>
+          <Button variant="outline" className="rounded-full">
+            <PenSquare data-icon="inline-start" />
+            Create Post
+          </Button>
+        </EmptyContent>
+      </Empty>
     );
   }
 
@@ -140,7 +160,7 @@ const PostLists = ({ activeTab = 'forYou', onOpenComments, scrollRef }) => {
             >
               {isLoaderRow ? (
                 <div className="flex justify-center py-4">
-                  <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+                  <Spinner className="size-6 text-muted-foreground" />
                 </div>
               ) : (
                 <Post

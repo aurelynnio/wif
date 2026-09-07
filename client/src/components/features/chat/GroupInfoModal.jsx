@@ -1,16 +1,41 @@
 import { useState, useEffect } from 'react';
 import {
-  X,
   Edit,
   Search,
   UserPlus,
   UserMinus,
   Check,
   LogOut,
-  Loader2,
+  X,
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from '@/components/ui/avatar';
+import { Spinner } from '@/components/ui/spinner';
 import { useSearchUsers } from '@/hooks/useSearchQuery';
 import { useDebounce } from '@/hooks/useDebounce';
+
+const getInitials = name =>
+  (name || '?')
+    .split(' ')
+    .map(w => w?.[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
 const GroupInfoModal = ({
   isOpen,
@@ -55,7 +80,7 @@ const GroupInfoModal = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen || !conversation) return null;
+  if (!conversation) return null;
 
   const isAdmin =
     conversation.admin === currentUserId ||
@@ -78,32 +103,26 @@ const GroupInfoModal = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      tabIndex={-1}
-      onKeyDown={event => {
-        if (event.key === 'Escape') onClose?.();
+    <Dialog
+      open={isOpen}
+      onOpenChange={open => {
+        if (!open) onClose?.();
       }}
     >
-      <div className="bg-white dark:bg-neutral-900 rounded-3xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] shadow-xl">
-        <div className="p-5 flex justify-between items-center bg-neutral-50 dark:bg-neutral-800/50">
-          <h2 className="text-xl font-bold text-black dark:text-white">
+      <DialogContent className="flex flex-col max-h-[90vh] gap-0 overflow-hidden p-0 sm:max-w-md">
+        <DialogHeader className="flex-row items-center justify-between border-b px-5 py-4">
+          <DialogTitle className="text-lg font-bold">
             Thông tin nhóm
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
-          >
-            <X size={20} className="text-neutral-500" />
-          </button>
-        </div>
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Thông tin nhóm chat
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="p-6 overflow-y-auto custom-scrollbar space-y-8">
+        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-8 px-5 py-4">
           {/* Group Branding */}
           <div className="flex flex-col items-center gap-4">
-            <div className="w-24 h-24 rounded-3xl bg-neutral-900 dark:bg-white flex items-center justify-center text-white dark:text-neutral-900 text-4xl font-bold shadow-lg">
+            <div className="w-24 h-24 rounded-3xl bg-foreground text-background flex items-center justify-center text-4xl font-bold shadow-lg">
               {conversation.name
                 ? conversation.name.charAt(0).toUpperCase()
                 : 'G'}
@@ -111,43 +130,49 @@ const GroupInfoModal = ({
             <div className="w-full flex items-center justify-center gap-2">
               {isEditingName ? (
                 <div className="flex-1 flex items-center gap-2">
-                  <input
+                  <Input
+                    id="group-name-edit"
                     type="text"
                     value={newName}
-                    id="group-name-edit"
                     onChange={e => setNewName(e.target.value)}
                     aria-label="Group name"
-                    className="flex-1 px-4 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="flex-1"
                     autoFocus
                   />
-                  <button
+                  <Button
                     onClick={handleRename}
-                    className="p-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors"
+                    size="icon"
+                    aria-label="Đổi tên"
                   >
                     <Check size={18} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => setIsEditingName(false)}
-                    className="p-2 bg-neutral-200 dark:bg-neutral-700 text-black dark:text-white rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
+                    size="icon"
+                    variant="secondary"
+                    aria-label="Hủy đổi tên"
                   >
                     <X size={18} />
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <>
-                  <h3 className="text-2xl font-bold text-black dark:text-white truncate">
+                  <h3 className="text-2xl font-bold text-foreground truncate">
                     {conversation.name || 'Nhóm chưa đặt tên'}
                   </h3>
                   {isAdmin && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={() => {
                         setIsEditingName(true);
                         setNewName(conversation.name || '');
                       }}
-                      className="p-2 text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-all"
+                      aria-label="Đổi tên nhóm"
+                      className="text-muted-foreground hover:text-foreground"
                     >
                       <Edit size={18} />
-                    </button>
+                    </Button>
                   )}
                 </>
               )}
@@ -157,43 +182,41 @@ const GroupInfoModal = ({
           {/* Members Listing */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                 Thành viên ({conversation.members?.length || 0})
               </h4>
               {isAdmin && (
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => setShowAddMember(!showAddMember)}
-                  className="text-neutral-700 dark:text-neutral-200 text-sm font-bold hover:underline flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                  className="text-muted-foreground hover:text-foreground text-sm font-bold"
                 >
-                  <UserPlus size={16} /> Thêm mới
-                </button>
+                  <UserPlus size={16} data-icon="inline-start" /> Thêm mới
+                </Button>
               )}
             </div>
 
             {/* Add Member Search Area */}
             {showAddMember && (
-              <div className="bg-neutral-100 dark:bg-neutral-800/40 p-4 rounded-2xl animate-in fade-in slide-in-from-top-2">
+              <div className="bg-muted/40 p-4 rounded-2xl animate-in fade-in slide-in-from-top-2">
                 <div className="relative mb-3">
                   <Search
                     size={16}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                   />
-                  <input
+                  <Input
+                    id="group-member-search"
                     type="text"
                     value={searchQuery}
-                    id="group-member-search"
                     onChange={e => setSearchQuery(e.target.value)}
                     aria-label="Search members"
                     placeholder="Tìm tên bạn bè..."
-                    className="w-full pl-11 pr-4 py-2.5 text-sm rounded-xl bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-black dark:text-white"
+                    className="pl-10"
                   />
                 </div>
                 {isSearching ? (
                   <div className="flex justify-center p-4">
-                    <Loader2
-                      size={20}
-                      className="animate-spin text-neutral-700 dark:text-neutral-200"
-                    />
+                    <Spinner size={20} className="text-foreground" />
                   </div>
                 ) : searchResults.length > 0 ? (
                   <div className="max-h-52 overflow-y-auto space-y-2 custom-scrollbar">
@@ -212,40 +235,43 @@ const GroupInfoModal = ({
                           onKeyDown={event => handleUserKeyDown(event, user)}
                           role="button"
                           tabIndex={0}
-                          className="flex items-center justify-between p-2.5 hover:bg-white dark:hover:bg-neutral-800 rounded-xl transition-colors"
+                          className="flex items-center justify-between p-2.5 hover:bg-foreground/5 rounded-xl transition-colors"
                         >
                           <div className="flex items-center gap-3">
-                            <img
-                              src={
-                                user.avatar || 'https://via.placeholder.com/150'
-                              }
-                              className="w-9 h-9 rounded-full object-cover"
-                              alt={user.name || 'User avatar'}
-                            />
+                            <Avatar className="size-9">
+                              <AvatarImage
+                                src={
+                                  user.avatar ||
+                                  'https://via.placeholder.com/150'
+                                }
+                                alt={user.name || 'User avatar'}
+                              />
+                              <AvatarFallback>
+                                {getInitials(user.name)}
+                              </AvatarFallback>
+                            </Avatar>
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold text-black dark:text-white truncate">
+                              <p className="text-sm font-semibold text-foreground truncate">
                                 {user.name}
                               </p>
-                              <p className="text-[10px] text-neutral-500">
+                              <p className="text-[10px] text-muted-foreground">
                                 @{user.username}
                               </p>
                             </div>
                           </div>
                           {isMember ? (
-                            <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 text-neutral-500 px-2 py-1 rounded-md font-medium">
-                              Đã có mặt
-                            </span>
+                            <Badge variant="secondary">Đã có mặt</Badge>
                           ) : (
-                            <button
+                            <Button
                               onClick={() => {
                                 onAddMember(user._id);
                                 setSearchQuery('');
                                 setShowAddMember(false);
                               }}
-                              className="px-3 py-1.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs rounded-xl font-bold hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors"
+                              className="px-3 h-8 text-xs font-bold"
                             >
                               Thêm
-                            </button>
+                            </Button>
                           )}
                         </div>
                       );
@@ -253,7 +279,7 @@ const GroupInfoModal = ({
                   </div>
                 ) : (
                   searchQuery && (
-                    <p className="text-center text-xs text-neutral-500 py-4">
+                    <p className="text-center text-xs text-muted-foreground py-4">
                       Không tìm thấy ai
                     </p>
                   )
@@ -267,39 +293,42 @@ const GroupInfoModal = ({
                   key={member._id}
                   className="flex items-center justify-between group"
                 >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={member.avatar || 'https://via.placeholder.com/150'}
-                      alt={member.name}
-                      className="w-11 h-11 rounded-full object-cover"
-                    />
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Avatar className="size-11 flex-shrink-0">
+                      <AvatarImage
+                        src={member.avatar || 'https://via.placeholder.com/150'}
+                        alt={member.name}
+                      />
+                      <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                    </Avatar>
                     <div className="min-w-0">
-                      <p className="font-bold text-black dark:text-white text-sm truncate">
+                      <p className="font-bold text-foreground text-sm truncate">
                         {member.name}
                       </p>
-                      <p className="text-xs text-neutral-500 truncate">
+                      <p className="text-xs text-muted-foreground truncate">
                         @{member.username}
                         {conversation.admin === member._id && (
-                          <span className="ml-2 text-[10px] bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 px-2 py-0.5 rounded-full uppercase font-bold">
+                          <Badge variant="secondary" className="ml-2">
                             Trưởng nhóm
-                          </span>
+                          </Badge>
                         )}
                       </p>
                     </div>
                   </div>
                   {isAdmin && member._id !== currentUserId && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={() => onRemoveMember(member._id)}
-                      className="p-2.5 text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
                       title="Mời ra khỏi nhóm"
+                      aria-label="Mời ra khỏi nhóm"
                     >
                       <UserMinus size={18} />
-                    </button>
+                    </Button>
                   )}
                   {member._id === currentUserId && (
-                    <span className="text-xs text-neutral-400 font-medium bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded-md">
-                      Bạn
-                    </span>
+                    <Badge variant="secondary">Bạn</Badge>
                   )}
                 </div>
               ))}
@@ -307,17 +336,18 @@ const GroupInfoModal = ({
           </div>
         </div>
 
-        <div className="p-5 bg-neutral-50 dark:bg-neutral-800/50">
-          <button
+        <DialogFooter className="m-0 rounded-none border-t border-border px-5 py-4">
+          <Button
+            variant="destructive"
+            className="w-full"
             onClick={onLeaveGroup}
-            className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 font-bold rounded-2xl hover:bg-red-100 dark:hover:bg-red-900/20 transition-all"
           >
-            <LogOut size={20} />
+            <LogOut data-icon="inline-start" />
             Rời khỏi nhóm này
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

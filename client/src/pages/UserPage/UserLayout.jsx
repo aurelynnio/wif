@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import Navigate from '@/components/Common/Navigate';
 const UserLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { user } = useSelector(state => state.auth);
+  const user = useAuthStore(state => state.user);
 
   // Unread counts are handled by React Query in Navigate/Notification components
   useEffect(() => {

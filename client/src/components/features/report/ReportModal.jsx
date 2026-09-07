@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { X, AlertTriangle, Flag, Loader2, Check } from 'lucide-react';
+import { AlertTriangle, Flag, Check } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Spinner } from '@/components/ui/spinner';
 import { useSubmitReport } from '@/hooks/useReportQuery';
 import { notify } from '@/utils/notify';
 import { REPORT_REASONS } from '@/constants/report';
@@ -71,40 +75,33 @@ const ReportModal = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
-      onClick={handleClose}
+    <Dialog
+      open
+      onOpenChange={open => {
+        if (!open) handleClose();
+      }}
     >
-      <div
-        className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-2xl shadow-xl"
-        onClick={e => e.stopPropagation()}
-      >
+      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-800">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2">
-            <Flag size={18} className="text-red-500" />
-            <h2 className="text-base font-semibold text-black dark:text-white">
+            <Flag size={18} className="text-destructive" />
+            <DialogTitle className="text-base font-semibold text-foreground">
               Report {getTargetLabel()}
-            </h2>
+            </DialogTitle>
           </div>
-          <button
-            onClick={handleClose}
-            className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-          >
-            <X size={18} className="text-neutral-400" />
-          </button>
         </div>
 
         {/* Content */}
         {submitted ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-4">
-              <Check size={32} className="text-green-500" />
+            <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mb-4">
+              <Check size={32} className="text-success" />
             </div>
-            <h3 className="text-lg font-semibold text-black dark:text-white mb-2">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               Report Submitted
             </h3>
-            <p className="text-sm text-neutral-500 text-center px-6">
+            <p className="text-sm text-muted-foreground text-center px-6">
               Thank you for helping keep our community safe. We'll review your
               report and take appropriate action.
             </p>
@@ -112,13 +109,13 @@ const ReportModal = ({
         ) : (
           <>
             {/* Warning */}
-            <div className="mx-4 mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <div className="mx-4 mt-4 p-3 bg-warning/10 border border-warning/30 rounded-lg">
               <div className="flex gap-2">
                 <AlertTriangle
                   size={18}
-                  className="text-amber-500 flex-shrink-0 mt-0.5"
+                  className="text-warning flex-shrink-0 mt-0.5"
                 />
-                <p className="text-sm text-amber-700 dark:text-amber-300">
+                <p className="text-sm text-warning/90">
                   Reports are reviewed by our moderation team. False reports may
                   result in action against your account.
                 </p>
@@ -127,25 +124,26 @@ const ReportModal = ({
 
             {/* Reasons */}
             <div className="p-4">
-              <p className="text-sm font-medium text-black dark:text-white mb-3">
+              <p className="text-sm font-medium text-foreground mb-3">
                 Why are you reporting this {getTargetLabel()}?
               </p>
               <div className="space-y-2 max-h-[35vh] overflow-y-auto">
                 {REPORT_REASONS.map(reason => (
                   <button
+                    type="button"
                     key={reason.id}
                     onClick={() => setSelectedReason(reason.id)}
                     className={`w-full flex items-start gap-3 p-3 rounded-lg text-left transition-colors ${
                       selectedReason === reason.id
-                        ? 'bg-neutral-100 dark:bg-neutral-800 border-2 border-primary'
-                        : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700'
+                        ? 'bg-muted border-2 border-primary'
+                        : 'hover:bg-muted border border-border'
                     }`}
                   >
                     <div
                       className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
                         selectedReason === reason.id
                           ? 'border-primary bg-primary'
-                          : 'border-neutral-300 dark:border-neutral-600'
+                          : 'border-border'
                       }`}
                     >
                       {selectedReason === reason.id && (
@@ -153,10 +151,10 @@ const ReportModal = ({
                       )}
                     </div>
                     <div>
-                      <p className="font-medium text-black dark:text-white text-sm">
+                      <p className="font-medium text-foreground text-sm">
                         {reason.label}
                       </p>
-                      <p className="text-xs text-neutral-500 mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {reason.description}
                       </p>
                     </div>
@@ -167,18 +165,18 @@ const ReportModal = ({
               {/* Additional description */}
               {selectedReason && (
                 <div className="mt-4">
-                  <label className="text-sm font-medium text-black dark:text-white mb-2 block">
+                  <label className="text-sm font-medium text-foreground mb-2 block">
                     Additional details (optional)
                   </label>
-                  <textarea
+                  <Textarea
                     value={description}
                     onChange={e => setDescription(e.target.value)}
                     placeholder="Provide any additional context..."
-                    className="w-full p-3 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-transparent text-black dark:text-white placeholder:text-neutral-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    className="resize-none"
                     rows={3}
                     maxLength={500}
                   />
-                  <p className="text-xs text-neutral-400 mt-1 text-right">
+                  <p className="text-xs text-muted-foreground mt-1 text-right">
                     {description.length}/500
                   </p>
                 </div>
@@ -186,38 +184,37 @@ const ReportModal = ({
             </div>
 
             {/* Actions */}
-            <div className="px-4 py-3 border-t border-neutral-200 dark:border-neutral-800 flex gap-3">
-              <button
+            <div className="px-4 py-3 border-t border-border flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
                 onClick={handleClose}
-                className="flex-1 px-4 py-2.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-black dark:text-white text-sm font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex-1"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
                 onClick={handleSubmit}
                 disabled={!selectedReason || loading}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-colors ${
-                  selectedReason && !loading
-                    ? 'bg-red-500 text-white hover:bg-red-600'
-                    : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-400 cursor-not-allowed'
-                }`}
+                className="flex-1"
               >
                 {loading ? (
-                  <Loader2 size={16} className="animate-spin" />
+                  <Spinner />
                 ) : (
                   <>
                     <Flag size={16} />
                     Submit Report
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           </>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
 export default ReportModal;
-

@@ -1,6 +1,20 @@
 import { useState, memo, useCallback } from 'react';
 import { MoreHorizontal, Edit2, Trash2, Send, X } from 'lucide-react';
 import { formatDistanceToNow } from '@/utils/dateUtils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from '@/components/ui/avatar';
 
 /**
  * CommentInput - Input để thêm comment/reply
@@ -14,8 +28,9 @@ const CommentInput = memo(
       if (!value.trim() || isSubmitting) return;
       setIsSubmitting(true);
       try {
-        await onSubmit(value);
-        setValue('');
+        // Chỉ xoá input khi submit thành công, tránh mất nội dung khi thất bại
+        const success = await onSubmit(value);
+        if (success) setValue('');
       } finally {
         setIsSubmitting(false);
       }
@@ -30,7 +45,7 @@ const CommentInput = memo(
 
     return (
       <div className="flex items-center gap-2">
-        <input
+        <Input
           type="text"
           value={value}
           onChange={e => setValue(e.target.value)}
@@ -38,75 +53,24 @@ const CommentInput = memo(
           placeholder={placeholder}
           autoFocus={autoFocus}
           disabled={isSubmitting}
-          className="flex-1 px-4 py-2.5 rounded-full bg-[var(--color-surface-secondary)] 
-                   text-[var(--color-content)] placeholder:text-[var(--color-text-tertiary)] 
-                   text-sm focus:outline-none focus:ring-2 focus:ring-primary 
-                   disabled:opacity-50"
+          className="flex-1 rounded-full bg-muted"
         />
-        <button
+        <Button
           onClick={handleSubmit}
           disabled={!value.trim() || isSubmitting}
-          className={`p-2.5 rounded-full transition-all duration-200 ${
-            value.trim() && !isSubmitting
-              ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:opacity-80'
-              : 'bg-[var(--color-surface-secondary)] text-[var(--color-text-tertiary)] cursor-not-allowed'
-          }`}
+          variant={value.trim() && !isSubmitting ? 'default' : 'ghost'}
+          size="icon"
+          className="rounded-full"
+          aria-label="Gửi bình luận"
         >
-          <Send size={16} />
-        </button>
+          <Send />
+        </Button>
       </div>
     );
   }
 );
 
 CommentInput.displayName = 'CommentInput';
-
-/**
- * OptionsMenu - Dropdown menu cho comment actions
- */
-const OptionsMenu = memo(({ isOwner, onEdit, onDelete, onClose }) => (
-  <div
-    className="absolute right-0 top-full mt-1 w-36 bg-[var(--color-surface)] border border-[var(--color-border)]
-                  rounded-lg py-1 z-20 animate-in fade-in slide-in-from-top-1 duration-150"
-  >
-    {isOwner ? (
-      <>
-        <button
-          onClick={() => {
-            onEdit();
-            onClose();
-          }}
-          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--color-text-secondary)] 
-                   hover:bg-[var(--color-surface-hover)]"
-        >
-          <Edit2 size={14} />
-          Chỉnh sửa
-        </button>
-        <button
-          onClick={() => {
-            onDelete();
-            onClose();
-          }}
-          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--color-error)] 
-                   hover:bg-[var(--color-surface-hover)]"
-        >
-          <Trash2 size={14} />
-          Xóa
-        </button>
-      </>
-    ) : (
-      <button
-        onClick={onClose}
-        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--color-text-secondary)] 
-                 hover:bg-[var(--color-surface-hover)]"
-      >
-        Báo cáo
-      </button>
-    )}
-  </div>
-));
-
-OptionsMenu.displayName = 'OptionsMenu';
 
 /**
  * CommentItem - Component hiển thị một comment
@@ -179,59 +143,62 @@ const CommentItem = memo(
 
         {/* Main Comment */}
         <div className="flex gap-3 relative z-10">
-          {/* Avatar - using Design System class */}
-          <div className="relative">
-            <img
-              src={avatarSrc}
-              alt=""
-              onError={e => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`;
-              }}
-              className={`yb-avatar bg-[var(--color-surface-secondary)] object-cover flex-shrink-0 ${
-                depth > 0 ? 'w-8 h-8' : 'w-10 h-10'
-              }`}
-            />
+          {/* Avatar */}
+          <div className="relative flex-shrink-0">
+            <Avatar
+              size={depth > 0 ? 'default' : 'lg'}
+              className="bg-muted"
+            >
+              <AvatarImage
+                src={avatarSrc}
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+              <AvatarFallback>
+                {(comment.user?.name || '?').charAt(0)}
+              </AvatarFallback>
+            </Avatar>
           </div>
 
           <div className="flex-1 min-w-0">
             {/* Comment Content */}
             {isEditing ? (
-              <div className="bg-neutral-100 dark:bg-neutral-800 rounded-2xl p-3 animate-scale-in">
-                <textarea
+              <div className="bg-muted rounded-2xl p-3 animate-scale-in">
+                <Textarea
                   value={editValue}
                   onChange={e => setEditValue(e.target.value)}
-                  className="w-full bg-transparent text-[var(--color-content)] text-sm 
-                           resize-none focus:outline-none font-sans"
+                  className="w-full border-0 bg-transparent px-0 py-0 text-sm resize-none shadow-none focus-visible:ring-0 focus-visible:border-0"
                   rows={2}
                   autoFocus
                 />
                 <div className="flex justify-end gap-2 mt-2">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                       setIsEditing(false);
                       setEditValue(comment.content);
                     }}
-                    className="px-3 py-1 text-xs font-medium text-[var(--color-text-tertiary)] 
-                             hover:bg-[var(--color-surface-hover)] rounded-lg transition-all"
+                    className="rounded-lg text-xs"
                   >
                     Hủy
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    size="sm"
                     onClick={handleEdit}
                     disabled={!editValue.trim()}
-                    className="px-3 py-1 text-xs font-medium bg-[var(--color-primary)] text-[var(--color-primary-foreground)]
-                             rounded-lg hover:opacity-90 disabled:opacity-50 transition-all"
+                    className="rounded-lg text-xs"
                   >
                     Lưu
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
               <div className="group/content">
-                <div className="bg-[var(--color-surface-secondary)] rounded-[1.25rem] px-4 py-3 inline-block max-w-full hover-lift">
+                <div className="bg-muted rounded-[1.25rem] px-4 py-3 inline-block max-w-full">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[13px] font-semibold text-[var(--color-content)]">
+                    <span className="text-[13px] font-semibold text-foreground">
                       {comment.user?.name || 'Người dùng'}
                     </span>
                     {comment.user?.verified && (
@@ -246,57 +213,88 @@ const CommentItem = memo(
                         </svg>
                       </span>
                     )}
-                    <span className="text-[11px] text-[var(--color-text-tertiary)] ml-1">
+                    <span className="text-[11px] text-muted-foreground ml-1">
                       {timeAgo}
                     </span>
                   </div>
-                  <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed break-words font-normal">
+                  <p className="text-[14px] text-muted-foreground leading-relaxed break-words font-normal">
                     {comment.content}
                   </p>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-4 mt-1.5 px-3">
-                  <button
+                <div className="flex items-center gap-1 mt-1.5 px-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={handleLike}
-                    className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
+                    className={
                       isLiked
-                        ? 'text-[var(--color-like)]'
-                        : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-like)]'
-                    }`}
+                        ? 'text-red-500 hover:text-red-500'
+                        : 'text-muted-foreground hover:text-red-500'
+                    }
                   >
                     {isLiked ? 'Đã thích' : 'Thích'}
                     {likeCount > 0 && (
                       <span className="text-[11px]">{likeCount}</span>
                     )}
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={handleReply}
-                    className="text-xs font-medium text-[var(--color-text-tertiary)] 
-                             hover:text-[var(--color-text-secondary)] transition-colors"
+                    className="text-xs font-medium text-muted-foreground hover:text-foreground"
                   >
                     Trả lời
-                  </button>
+                  </Button>
 
                   <div className="relative opacity-0 group-hover/content:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => setShowOptions(!showOptions)}
-                      className="p-1 rounded-full hover:bg-[var(--color-surface-hover)] transition-colors"
+                    <DropdownMenu
+                      open={showOptions}
+                      onOpenChange={setShowOptions}
                     >
-                      <MoreHorizontal
-                        size={14}
-                        className="text-[var(--color-text-tertiary)]"
-                      />
-                    </button>
-                    {showOptions && (
-                      <OptionsMenu
-                        isOwner={isOwner}
-                        onEdit={() => setIsEditing(true)}
-                        onDelete={() => setShowDeleteConfirm(true)}
-                        onClose={() => setShowOptions(false)}
-                      />
-                    )}
+                      <DropdownMenuTrigger
+                        aria-label="Tùy chọn bình luận"
+                        className="p-1 rounded-full hover:bg-muted transition-colors"
+                      >
+                        <MoreHorizontal
+                          size={14}
+                          className="text-muted-foreground"
+                        />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-36">
+                        {isOwner ? (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setIsEditing(true);
+                                setShowOptions(false);
+                              }}
+                            >
+                              <Edit2 data-icon="inline-start" />
+                              Chỉnh sửa
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              data-variant="destructive"
+                              onClick={() => {
+                                setShowDeleteConfirm(true);
+                                setShowOptions(false);
+                              }}
+                            >
+                              <Trash2 data-icon="inline-start" />
+                              Xóa
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
+                          <DropdownMenuItem
+                            onClick={() => setShowOptions(false)}
+                          >
+                            Báo cáo
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </div>
@@ -312,12 +310,15 @@ const CommentItem = memo(
                     autoFocus
                   />
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={onCancelReply}
-                  className="p-2 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="Hủy trả lời"
                 >
-                  <X size={16} />
-                </button>
+                  <X />
+                </Button>
               </div>
             )}
           </div>
@@ -355,25 +356,27 @@ const CommentItem = memo(
               className="yb-card p-6 w-full max-w-sm mx-4 shadow-2xl animate-scale-in"
               onClick={e => e.stopPropagation()}
             >
-              <h3 className="text-lg font-semibold text-[var(--color-content)]">
+              <h3 className="text-lg font-semibold text-foreground">
                 Xóa bình luận?
               </h3>
-              <p className="text-sm text-[var(--color-text-tertiary)] mt-2">
+              <p className="text-sm text-muted-foreground mt-2">
                 Bạn có chắc muốn xóa bình luận này không?
               </p>
               <div className="flex justify-end gap-3 mt-6">
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="yb-btn yb-btn-ghost text-sm px-4 py-2"
                 >
                   Hủy
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
                   onClick={handleDelete}
-                  className="yb-btn bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 shadow-sm"
                 >
                   Xóa
-                </button>
+                </Button>
               </div>
             </div>
           </div>

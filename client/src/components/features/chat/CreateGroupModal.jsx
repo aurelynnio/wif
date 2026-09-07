@@ -1,5 +1,31 @@
 import { useEffect } from 'react';
-import { Search, X, Loader2, Check } from 'lucide-react';
+import { Search, X, Check } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from '@/components/ui/avatar';
+import { Spinner } from '@/components/ui/spinner';
+
+const getInitials = name =>
+  (name || '?')
+    .split(' ')
+    .map(w => w?.[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
 const CreateGroupModal = ({
   isOpen,
@@ -25,8 +51,6 @@ const CreateGroupModal = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   const handleUserKeyDown = (event, user) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
@@ -35,63 +59,56 @@ const CreateGroupModal = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      tabIndex={-1}
-      onKeyDown={event => {
-        if (event.key === 'Escape') onClose?.();
+    <Dialog
+      open={isOpen}
+      onOpenChange={open => {
+        if (!open) onClose?.();
       }}
     >
-      <div className="bg-white dark:bg-neutral-900 rounded-3xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] shadow-xl">
-        <div className="p-5 flex justify-between items-center bg-neutral-50 dark:bg-neutral-800/50">
-          <h2 className="text-xl font-bold text-black dark:text-white">
+      <DialogContent className="flex flex-col max-h-[90vh] gap-0 overflow-hidden p-0 sm:max-w-md">
+        <DialogHeader className="flex-row items-center justify-between border-b px-5 py-4">
+          <DialogTitle className="text-lg font-bold">
             Tạo nhóm mới
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
-          >
-            <X size={20} className="text-neutral-500" />
-          </button>
-        </div>
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Biểu mẫu tạo nhóm mới
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="p-6 space-y-6 flex-1 overflow-hidden flex flex-col">
+        <div className="flex flex-1 flex-col gap-4 overflow-hidden px-5 py-4">
           {/* Group Name */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+            <Label htmlFor="group-name" className="text-sm font-semibold">
               Tên nhóm
-            </label>
-            <input
+            </Label>
+            <Input
+              id="group-name"
               type="text"
               value={groupName}
-              id="group-name"
               onChange={e => setGroupName(e.target.value)}
               placeholder="Nhập tên nhóm của bạn..."
               aria-label="Group name"
-              className="w-full px-4 py-3 rounded-2xl bg-neutral-100 dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-black dark:text-white"
             />
           </div>
 
           {/* User Search */}
-          <div className="flex-1 flex flex-col min-h-0 space-y-2">
-            <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+          <div className="flex min-h-0 flex-1 flex-col space-y-2">
+            <Label htmlFor="group-search" className="text-sm font-semibold">
               Thêm thành viên
-            </label>
+            </Label>
             <div className="relative mb-2">
               <Search
                 size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               />
-              <input
+              <Input
+                id="group-search"
                 type="text"
                 value={searchQuery}
-                id="group-search"
                 onChange={e => onSearchChange(e.target.value)}
                 placeholder="Tìm kiếm bạn bè..."
                 aria-label="Search users"
-                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-neutral-100 dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-sm text-black dark:text-white"
+                className="pl-10"
               />
             </div>
 
@@ -101,35 +118,34 @@ const CreateGroupModal = ({
                 {selectedUsers.map(user => (
                   <div
                     key={user._id}
-                    className="flex items-center gap-1.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 px-3 py-1.5 rounded-full text-xs font-medium"
+                    className="flex items-center gap-1.5 bg-muted text-foreground px-3 py-1.5 rounded-full text-xs font-medium"
                   >
                     <span>{user.name}</span>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => onToggleUser(user)}
                       aria-label={`Remove ${user.name || 'user'}`}
-                      className="hover:text-neutral-900 dark:hover:text-white"
+                      className="hover:text-foreground"
                     >
                       <X size={12} />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
             )}
 
             {/* Search Results Area */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar rounded-2xl bg-neutral-100/50 dark:bg-neutral-800/30">
+            <div className="flex-1 overflow-y-auto custom-scrollbar rounded-2xl bg-muted/30">
               {isSearching ? (
                 <div className="flex flex-col items-center justify-center p-8 space-y-2">
-                  <Loader2
-                    className="animate-spin text-neutral-700 dark:text-neutral-200"
-                    size={24}
-                  />
-                  <span className="text-xs text-neutral-500">
+                  <Spinner className="size-6 text-foreground" />
+                  <span className="text-xs text-muted-foreground">
                     Đang tìm kiếm...
                   </span>
                 </div>
               ) : searchResults.length > 0 ? (
-                <div className="divide-y divide-neutral-100 dark:divide-neutral-700/50">
+                <div className="divide-y divide-border">
                   {searchResults.map(user => {
                     const isSelected = selectedUsers.some(
                       u => u._id === user._id
@@ -141,29 +157,34 @@ const CreateGroupModal = ({
                         onKeyDown={event => handleUserKeyDown(event, user)}
                         role="button"
                         tabIndex={0}
-                        className={`p-3 flex items-center justify-between cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors ${
-                          isSelected ? 'bg-neutral-100 dark:bg-neutral-800' : ''
+                        className={`p-3 flex items-center justify-between cursor-pointer hover:bg-muted transition-colors ${
+                          isSelected ? 'bg-muted' : ''
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <img
-                            src={
-                              user.avatar || 'https://via.placeholder.com/150'
-                            }
-                            alt={user.name || 'User avatar'}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
+                          <Avatar className="size-10">
+                            <AvatarImage
+                              src={
+                                user.avatar ||
+                                'https://via.placeholder.com/150'
+                              }
+                              alt={user.name || 'User avatar'}
+                            />
+                            <AvatarFallback>
+                              {getInitials(user.name)}
+                            </AvatarFallback>
+                          </Avatar>
                           <div>
-                            <p className="text-sm font-semibold text-black dark:text-white">
+                            <p className="text-sm font-semibold text-foreground">
                               {user.name}
                             </p>
-                            <p className="text-xs text-neutral-500">
+                            <p className="text-xs text-muted-foreground">
                               @{user.username}
                             </p>
                           </div>
                         </div>
                         {isSelected && (
-                          <div className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-full p-1">
+                          <div className="bg-foreground text-background rounded-full p-1">
                             <Check size={14} />
                           </div>
                         )}
@@ -174,7 +195,7 @@ const CreateGroupModal = ({
               ) : (
                 searchQuery && (
                   <div className="flex flex-col items-center justify-center p-8 text-center">
-                    <p className="text-sm text-neutral-500">
+                    <p className="text-sm text-muted-foreground">
                       Không tìm thấy người dùng nào phù hợp
                     </p>
                   </div>
@@ -184,23 +205,19 @@ const CreateGroupModal = ({
           </div>
         </div>
 
-        <div className="p-5 bg-neutral-50 dark:bg-neutral-800/50 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-5 py-2.5 text-sm font-semibold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-xl transition-all"
-          >
+        <DialogFooter className="m-0 rounded-none border-t border-border px-5 py-4">
+          <Button variant="secondary" onClick={onClose}>
             Hủy
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onSubmit}
             disabled={!groupName.trim() || selectedUsers.length < 2}
-            className="px-6 py-2.5 text-sm font-semibold bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Tạo nhóm
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

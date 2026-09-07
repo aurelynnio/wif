@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import { Users, UserPlus, Check, Search, X, Loader2 } from 'lucide-react';
 import {
   useFollowers,
@@ -10,9 +10,18 @@ import {
 } from '@/hooks/useUserQuery';
 import { notify } from '@/utils/notify';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Empty,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from '@/components/ui/empty';
 
 const FollowingUser = () => {
-  const authUser = useSelector(state => state.auth?.user);
+  const authUser = useAuthStore(state => state.user);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('following');
@@ -82,47 +91,44 @@ const FollowingUser = () => {
           <div className="relative mb-3">
             <Search
               size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
             />
-            <input
+            <Input
               type="text"
               placeholder={`Search ${activeTab}...`}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
+              className="pl-10 pr-10 rounded-full"
             />
             {searchQuery && (
-              <button
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Xóa tìm kiếm"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full text-muted-foreground hover:bg-muted"
               >
-                <X size={14} className="text-neutral-500" />
-              </button>
+                <X size={14} />
+              </Button>
             )}
           </div>
 
           {/* Tabs */}
           <div className="flex gap-1">
-            <button
+            <Button
+              variant={activeTab === 'following' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('following')}
-              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
-                activeTab === 'following'
-                  ? 'bg-black dark:bg-white text-white dark:text-black'
-                  : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-              }`}
+              className={`flex-1 rounded-lg ${activeTab === 'following' ? '' : 'text-muted-foreground hover:bg-muted'}`}
             >
               Following
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={activeTab === 'followers' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('followers')}
-              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
-                activeTab === 'followers'
-                  ? 'bg-black dark:bg-white text-white dark:text-black'
-                  : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-              }`}
+              className={`flex-1 rounded-lg ${activeTab === 'followers' ? '' : 'text-muted-foreground hover:bg-muted'}`}
             >
               Followers
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -133,21 +139,23 @@ const FollowingUser = () => {
           <LoadingSpinner size="md" />
         </div>
       ) : filteredUsers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-neutral-500">
-          <Users size={48} className="mb-4 text-neutral-300" />
-          <h2 className="text-lg font-semibold text-black dark:text-white mb-2">
+        <Empty className="py-20">
+          <EmptyMedia>
+            <Users size={48} className="text-muted-foreground/40" />
+          </EmptyMedia>
+          <EmptyTitle>
             {searchQuery
               ? 'No users found'
               : activeTab === 'following'
               ? 'Not following anyone'
               : 'No followers yet'}
-          </h2>
-          <p className="text-sm">
+          </EmptyTitle>
+          <EmptyDescription>
             {searchQuery
               ? 'Try a different search'
               : 'Start connecting with people'}
-          </p>
-        </div>
+          </EmptyDescription>
+        </Empty>
       ) : (
         <div className="divide-y divide-neutral-50 dark:divide-neutral-800/50">
           {filteredUsers.map(user => {
@@ -169,14 +177,18 @@ const FollowingUser = () => {
                     to={`/profile/${user._id}`}
                     className="relative flex-shrink-0"
                   >
-                    <img
-                      src={
-                        user.avatar ||
-                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
-                      }
-                      alt={user.name || user.username}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
+                    <Avatar className="size-12">
+                      <AvatarImage
+                        src={
+                          user.avatar ||
+                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
+                        }
+                        alt={user.name || user.username}
+                      />
+                      <AvatarFallback>
+                        {(user.name || user.username || 'U')[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                     {(user.verified || user.isVerified) && (
                       <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-black dark:bg-white flex items-center justify-center">
                         <Check
@@ -207,33 +219,32 @@ const FollowingUser = () => {
 
                   {/* Follow Button - Don't show for self */}
                   {user._id !== authUser?._id && (
-                    <button
+                    <Button
+                      variant={isFollowingUser ? 'default' : 'outline'}
                       onClick={() =>
                         handleToggleFollow(user._id, isFollowingUser)
                       }
                       disabled={mutationLoading}
-                      className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full font-medium flex-shrink-0 transition-colors ${
-                        mutationLoading ? 'opacity-50 cursor-not-allowed' : ''
-                      } ${
+                      className={
                         isFollowingUser
-                          ? 'bg-neutral-200 dark:bg-neutral-800 text-black dark:text-white hover:bg-red-500/10 hover:text-red-500'
-                          : 'bg-black dark:bg-white text-white dark:text-black'
-                      }`}
+                          ? 'rounded-full px-4 flex-shrink-0 text-muted-foreground hover:text-red-500'
+                          : 'rounded-full px-4 flex-shrink-0'
+                      }
                     >
                       {mutationLoading ? (
-                        <Loader2 size={14} className="animate-spin" />
+                        <Loader2 data-icon="inline-start" className="animate-spin" />
                       ) : isFollowingUser ? (
                         <>
-                          <Check size={14} />
+                          <Check data-icon="inline-start" />
                           Following
                         </>
                       ) : (
                         <>
-                          <UserPlus size={14} />
+                          <UserPlus data-icon="inline-start" />
                           Follow
                         </>
                       )}
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>

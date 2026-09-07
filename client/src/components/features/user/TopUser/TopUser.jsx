@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import { UserPlus, Check, Loader2 } from 'lucide-react';
 import { useFollowUser, useUnfollowUser } from '@/hooks/useUserQuery';
 import { notify } from '@/utils/notify';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 const TopUser = ({ users = [], loading = false }) => {
-  const { user: currentUser } = useSelector(state => state.auth);
+  const currentUser = useAuthStore(state => state.user);
   const [followingIds, setFollowingIds] = useState(new Set());
   const [loadingIds, setLoadingIds] = useState(new Set());
 
@@ -77,14 +79,18 @@ const TopUser = ({ users = [], loading = false }) => {
           >
             {/* Avatar */}
             <div className="relative flex-shrink-0">
-              <img
-                src={
-                  user.avatar ||
-                  `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
-                }
-                alt={user.name || user.username}
-                className="w-10 h-10 rounded-full object-cover"
-              />
+              <Avatar className="size-10">
+                <AvatarImage
+                  src={
+                    user.avatar ||
+                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
+                  }
+                  alt={user.name || user.username}
+                />
+                <AvatarFallback>
+                  {(user.name || user.username || 'U')[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
               {(user.verified || user.isVerified) && (
                 <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-black dark:bg-white flex items-center justify-center">
                   <Check size={8} className="text-white dark:text-black" />
@@ -106,29 +112,31 @@ const TopUser = ({ users = [], loading = false }) => {
 
             {/* Follow Button - Hide if self */}
             {!isSelf && (
-              <button
+              <Button
+                size="xs"
+                variant={isFollowed ? 'default' : 'outline'}
                 onClick={e => handleFollow(e, user._id, isFollowed)}
                 disabled={isLoading}
-                className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-full font-medium flex-shrink-0 transition-colors disabled:opacity-50 ${
+                className={
                   isFollowed
-                    ? 'bg-neutral-200 dark:bg-neutral-800 text-black dark:text-white'
-                    : 'bg-primary text-primary-foreground'
-                }`}
+                    ? 'rounded-full flex-shrink-0 text-muted-foreground'
+                    : 'rounded-full flex-shrink-0'
+                }
               >
                 {isLoading ? (
                   <Loader2 size={12} className="animate-spin" />
                 ) : isFollowed ? (
                   <>
-                    <Check size={12} />
+                    <Check data-icon="inline-start" />
                     <span>Following</span>
                   </>
                 ) : (
                   <>
-                    <UserPlus size={12} />
+                    <UserPlus data-icon="inline-start" />
                     <span>Follow</span>
                   </>
                 )}
-              </button>
+              </Button>
             )}
           </Link>
         );

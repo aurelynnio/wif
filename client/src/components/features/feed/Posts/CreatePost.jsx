@@ -1,13 +1,14 @@
 import { useState, useMemo, lazy, Suspense } from 'react';
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import { Image, Smile, PenSquare } from 'lucide-react';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
+import { Button } from '@/components/ui/button';
 
 const ModelPost = lazy(() => import('./ModelPost'));
 
 const CreatePost = () => {
   const [showModal, setShowModal] = useState(false);
-  const { user } = useSelector(state => state.auth);
+  const user = useAuthStore(state => state.user);
 
   const avatarUrl = useMemo(
     () =>
@@ -44,29 +45,33 @@ const CreatePost = () => {
             {/* Actions */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mt-3">
               <div className="flex items-center gap-1 flex-wrap">
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setShowModal(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-xs text-neutral-500 hover:text-black dark:hover:text-white whitespace-nowrap"
+                  className="rounded-full text-xs text-muted-foreground hover:text-foreground whitespace-nowrap"
                 >
-                  <Image size={16} />
+                  <Image data-icon="inline-start" />
                   <span className="hidden sm:inline">Media</span>
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setShowModal(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-xs text-neutral-500 hover:text-black dark:hover:text-white whitespace-nowrap"
+                  className="rounded-full text-xs text-muted-foreground hover:text-foreground whitespace-nowrap"
                 >
-                  <Smile size={16} />
+                  <Smile data-icon="inline-start" />
                   <span className="hidden sm:inline">Feeling</span>
-                </button>
+                </Button>
               </div>
 
-              <button
+              <Button
                 onClick={() => setShowModal(true)}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-full hover:opacity-90 transition-opacity w-full sm:w-auto"
+                className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-full hover:opacity-90 transition-opacity w-full sm:w-auto"
               >
-                <PenSquare size={14} />
+                <PenSquare data-icon="inline-start" />
                 <span>Post</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>

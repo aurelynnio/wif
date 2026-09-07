@@ -1,7 +1,20 @@
 import { memo, useCallback } from 'react';
-import { X, MessageCircle, Loader2 } from 'lucide-react';
+import { X, MessageCircle } from 'lucide-react';
 import useComments from '@/hooks/useComments';
 import { CommentItem, CommentInput } from './CommentItem';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import {
+  Empty,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from '@/components/ui/empty';
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from '@/components/ui/avatar';
 
 /**
  * CommentModal - Modal hiển thị danh sách comment của một post
@@ -30,8 +43,10 @@ const CommentModal = memo(({ postId, onClose, variant = 'modal' }) => {
   // Thêm comment mới
   const handleAddComment = useCallback(
     async (content, parentId = null) => {
-      await addComment(content, parentId);
-      cancelReply();
+      const success = await addComment(content, parentId);
+      // Chỉ huỷ trạng thái reply khi comment thực sự được tạo
+      if (success) cancelReply();
+      return success;
     },
     [addComment, cancelReply]
   );
@@ -50,28 +65,33 @@ const CommentModal = memo(({ postId, onClose, variant = 'modal' }) => {
     <div
       className={
         isPanel
-          ? 'flex w-full flex-1 min-h-0 flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-content)] overflow-hidden'
-          : 'w-full max-w-lg rounded-2xl flex flex-col max-h-[80vh] overflow-hidden shadow-2xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-content)]'
+          ? 'flex w-full flex-1 min-h-0 flex-col rounded-2xl border border-border bg-background text-foreground overflow-hidden'
+          : 'w-full max-w-lg rounded-2xl flex flex-col max-h-[80vh] overflow-hidden shadow-2xl border border-border bg-background text-foreground'
       }
       onClick={isPanel ? undefined : e => e.stopPropagation()}
     >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]"
+          className="flex items-center justify-between px-4 py-3 border-b border-border"
         >
-          <h3 className="font-semibold text-[var(--color-content)] flex items-center gap-2">
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
             <MessageCircle size={18} />
             Bình luận
-            <span className="text-[var(--color-text-tertiary)] font-normal text-sm">
+            <span className="text-muted-foreground font-normal text-sm">
               ({totalCount})
             </span>
           </h3>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-[var(--color-surface-hover)] transition-colors"
-          >
-            <X size={18} className="text-[var(--color-text-tertiary)]" />
-          </button>
+          {(isPanel ? !!onClose : true) && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Đóng"
+              onClick={onClose}
+              className="text-muted-foreground"
+            >
+              <X />
+            </Button>
+          )}
         </div>
 
         {/* Content */}
@@ -79,40 +99,36 @@ const CommentModal = memo(({ postId, onClose, variant = 'modal' }) => {
           {/* Loading State */}
           {loading && (
             <div className="flex items-center justify-center py-8">
-              <Loader2
-                size={24}
-                className="animate-spin text-[var(--color-text-tertiary)]"
-              />
+              <Spinner className="size-6 text-muted-foreground" />
             </div>
           )}
 
           {/* Error State */}
           {error && !loading && (
             <div className="text-center py-8">
-              <p className="text-[var(--color-error)] text-sm">{error}</p>
-              <button
+              <p className="text-destructive text-sm">{error}</p>
+              <Button
+                variant="link"
+                size="sm"
                 onClick={refresh}
-                className="mt-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-content)] underline"
+                className="mt-2"
               >
                 Thử lại
-              </button>
+              </Button>
             </div>
           )}
 
           {/* Empty State */}
           {!loading && !error && comments.length === 0 && (
-            <div className="text-center py-8">
-              <MessageCircle
-                size={40}
-                className="mx-auto text-[var(--color-text-tertiary)] mb-3"
-              />
-              <p className="text-[var(--color-text-secondary)] text-sm">
-                Chưa có bình luận nào
-              </p>
-              <p className="text-[var(--color-text-tertiary)] text-xs mt-1">
+            <Empty className="py-8">
+              <EmptyMedia variant="icon">
+                <MessageCircle />
+              </EmptyMedia>
+              <EmptyTitle>Chưa có bình luận nào</EmptyTitle>
+              <EmptyDescription>
                 Hãy là người đầu tiên bình luận!
-              </p>
-            </div>
+              </EmptyDescription>
+            </Empty>
           )}
 
           {/* Comments List */}
@@ -137,26 +153,26 @@ const CommentModal = memo(({ postId, onClose, variant = 'modal' }) => {
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-[var(--color-border)]">
+        <div className="p-4 border-t border-border">
           <div className="flex items-center gap-3">
-            <img
-              src={
-                currentUser?.profile?.avatar ||
-                currentUser?.avatar ||
-                currentUser?.photo ||
-                `https://api.dicebear.com/7.x/avataaars/svg?seed=${
-                  currentUser?._id || currentUser?.id || currentUser?.username || 'user'
-                }`
-              }
-              alt=""
-              onError={e => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${
-                  currentUser?._id || currentUser?.id || currentUser?.username || 'user'
-                }`;
-              }}
-              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-            />
+            <Avatar size="default" className="flex-shrink-0 bg-muted">
+              <AvatarImage
+                src={
+                  currentUser?.profile?.avatar ||
+                  currentUser?.avatar ||
+                  currentUser?.photo ||
+                  `https://api.dicebear.com/7.x/avataaars/svg?seed=${
+                    currentUser?._id || currentUser?.id || currentUser?.username || 'user'
+                  }`
+                }
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+              <AvatarFallback>
+                {(currentUser?.fullName || currentUser?.username || '?').charAt(0)}
+              </AvatarFallback>
+            </Avatar>
             <div className="flex-1">
               <CommentInput
                 onSubmit={content => handleAddComment(content)}

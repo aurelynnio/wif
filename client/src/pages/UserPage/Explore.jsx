@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import {
   Search,
   TrendingUp,
@@ -24,6 +24,14 @@ import {
 import { useSearchUsers, useSearchPosts } from '@/hooks/useSearchQuery';
 import { useDebounce } from '@/hooks/useDebounce';
 import { formatNumber } from '@/utils/numberUtils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Empty,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
 
 const VIDEO_EXTENSIONS = /\.(mp4|webm|mov|m4v|m3u8|ogg)$/i;
 
@@ -34,7 +42,7 @@ const isVideoUrl = url => {
 };
 
 const Explore = () => {
-  const { user: currentUser } = useSelector(state => state.auth);
+  const currentUser = useAuthStore(state => state.user);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('trending');
@@ -134,35 +142,39 @@ const Explore = () => {
           <div className="relative mb-4">
             <Search
               size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
             />
-            <input
+            <Input
               type="text"
               placeholder="Search topics, people, posts..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-content dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
+              className="pl-10 pr-10 rounded-full"
             />
             {searchQuery && (
-              <button
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Xóa tìm kiếm"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full text-muted-foreground hover:bg-muted"
               >
-                <X size={14} className="text-neutral-500" />
-              </button>
+                <X size={14} />
+              </Button>
             )}
           </div>
 
           {/* Tabs */}
           <div className="flex gap-1">
             {tabs.map(tab => (
-              <button
+              <Button
                 key={tab.id}
+                variant={activeTab === tab.id ? 'default' : 'ghost'}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-colors overflow-hidden ${
+                className={`relative flex-1 flex items-center justify-center gap-2 rounded-lg overflow-hidden ${
                   activeTab === tab.id
-                    ? 'text-primary-foreground'
-                    : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                    ? ''
+                    : 'text-muted-foreground hover:bg-muted'
                 }`}
               >
                 {activeTab === tab.id && (
@@ -174,7 +186,7 @@ const Explore = () => {
                 )}
                 <tab.icon size={16} className="relative z-10" />
                 <span className="relative z-10">{tab.label}</span>
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -190,10 +202,12 @@ const Explore = () => {
                 <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
               </div>
             ) : hashtagsArray?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500">
-                <TrendingUp size={32} className="mx-auto mb-2 opacity-50" />
-                <p>Không có hashtag nổi bật</p>
-              </div>
+              <Empty className="py-8">
+                <EmptyMedia>
+                  <TrendingUp size={32} className="text-muted-foreground/50" />
+                </EmptyMedia>
+                <EmptyTitle>Không có hashtag nổi bật</EmptyTitle>
+              </Empty>
             ) : (
               hashtagsArray.map((item, index) => {
                 const tagName = getHashtagName(item);
@@ -236,14 +250,16 @@ const Explore = () => {
                 <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
               </div>
             ) : peopleList?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500">
-                <Users size={32} className="mx-auto mb-2 opacity-50" />
-                <p>
+              <Empty className="py-8">
+                <EmptyMedia>
+                  <Users size={32} className="text-muted-foreground/50" />
+                </EmptyMedia>
+                <EmptyTitle>
                   {debouncedSearch
                     ? 'Không tìm thấy người dùng'
                     : 'Không có gợi ý'}
-                </p>
-              </div>
+                </EmptyTitle>
+              </Empty>
             ) : (
               peopleList.map(user => {
                 const isFollowed = user.isFollowing;
@@ -262,14 +278,18 @@ const Explore = () => {
                       to={`/profile/${user.username}`}
                       className="relative flex-shrink-0"
                     >
-                      <img
-                        src={
-                          user.avatar ||
-                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
-                        }
-                        alt={user.name}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-neutral-200 dark:border-neutral-700"
-                      />
+                      <Avatar className="size-12 ring-2 ring-border">
+                        <AvatarImage
+                          src={
+                            user.avatar ||
+                            `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
+                          }
+                          alt={user.name}
+                        />
+                        <AvatarFallback>
+                          {(user.name || user.username || 'U')[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                       {(user.verified || user.isVerified) && (
                         <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center border-2 border-white dark:border-neutral-900">
                           <Check
@@ -295,33 +315,30 @@ const Explore = () => {
                       </p>
                     </div>
                     {!isSelf && (
-                      <button
+                      <Button
+                        variant={isFollowed ? 'default' : 'outline'}
                         onClick={() => handleFollow(user)}
                         disabled={isMutationLoading}
-                        className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full font-medium transition-colors ${
-                          isMutationLoading
-                            ? 'opacity-50 cursor-not-allowed'
-                            : ''
-                        } ${
+                        className={
                           isFollowed
-                            ? 'bg-neutral-100 dark:bg-neutral-800 text-content dark:text-white border border-neutral-200 dark:border-neutral-700'
-                            : 'bg-primary text-primary-foreground'
-                        }`}
+                            ? 'rounded-full px-4 flex-shrink-0 text-muted-foreground hover:text-red-500'
+                            : 'rounded-full px-4 flex-shrink-0'
+                        }
                       >
                         {isMutationLoading ? (
-                          <Loader2 size={14} className="animate-spin" />
+                          <Loader2 data-icon="inline-start" className="animate-spin" />
                         ) : isFollowed ? (
                           <>
-                            <Check size={14} />
+                            <Check data-icon="inline-start" />
                             Following
                           </>
                         ) : (
                           <>
-                            <UserPlus size={14} />
+                            <UserPlus data-icon="inline-start" />
                             Follow
                           </>
                         )}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 );
@@ -338,10 +355,12 @@ const Explore = () => {
                 <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
               </div>
             ) : explorePosts?.length === 0 ? (
-              <div className="col-span-3 text-center py-8 text-neutral-500">
-                <Image size={32} className="mx-auto mb-2 opacity-50" />
-                <p>Không có bài viết</p>
-              </div>
+              <Empty className="col-span-3 py-8">
+                <EmptyMedia>
+                  <Image size={32} className="text-muted-foreground/50" />
+                </EmptyMedia>
+                <EmptyTitle>Không có bài viết</EmptyTitle>
+              </Empty>
             ) : (
               (explorePosts || []).map(post => (
                 (() => {
@@ -377,6 +396,8 @@ const Explore = () => {
                       <img
                         src={mediaUrl}
                         alt={post.caption ? `Post: ${post.caption}` : 'Post'}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={e => {
                           e.currentTarget.src = 'https://via.placeholder.com/400';

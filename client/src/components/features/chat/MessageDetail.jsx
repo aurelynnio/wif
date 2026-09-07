@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useAuthStore } from '@/store/authStore';
 import {
   MessageCircle,
   X,
@@ -10,7 +10,6 @@ import {
   Image as ImageIcon,
   Smile,
   CheckCheck,
-  Loader2,
   Trash2,
   Copy,
   Flag,
@@ -19,6 +18,19 @@ import {
   Info,
 } from 'lucide-react';
 import { notify } from '@/utils/notify';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import {
   useConversations,
   useConversationById,
@@ -34,6 +46,15 @@ import {
 import { useSocketContext } from '@/contexts/useSocketContext';
 import { lazy, Suspense } from 'react';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
+
+const getInitials = name =>
+  (name || '?')
+    .split(' ')
+    .map(w => w?.[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
 // Lazy load modals
 const ReportModal = lazy(() =>
@@ -85,11 +106,15 @@ const MessageBubble = ({
         {!isOwn && (
           <div className="w-8 h-8 flex-shrink-0">
             {showAvatar ? (
-              <img
-                src={avatar || 'https://via.placeholder.com/150'}
-                alt=""
-                className="w-8 h-8 rounded-full object-cover"
-              />
+              <Avatar className="size-8">
+                <AvatarImage
+                  src={avatar || 'https://via.placeholder.com/150'}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+                <AvatarFallback>{getInitials('')}</AvatarFallback>
+              </Avatar>
             ) : (
               <div className="w-8" />
             )}
@@ -122,6 +147,8 @@ const MessageBubble = ({
                     key={i}
                     src={item.url}
                     alt=""
+                    loading="lazy"
+                    decoding="async"
                     className="rounded-xl max-w-full h-auto object-cover"
                   />
                 ))}
@@ -152,58 +179,49 @@ const MessageBubble = ({
           </div>
         </div>
 
-        {/* Action Button */}
-        <button
-          onClick={() => setShowMenu(!showMenu)}
-          className={`p-1.5 rounded-full hover:bg-surface-hover opacity-0 group-hover:opacity-100 transition-all ${
-            isOwn ? 'mr-1' : 'ml-1'
-          }`}
-        >
-          <MoreHorizontal size={14} className="text-text-tertiary" />
-        </button>
-
-        {/* Floating Menu */}
-        {showMenu && (
-          <>
-            <div
-              className="fixed inset-0 z-[60]"
-              onClick={() => setShowMenu(false)}
-            />
-            <div
-              className={`absolute ${
-                isOwn ? 'right-full mr-2' : 'left-full ml-2'
-              } bottom-2 z-[70] bg-surface rounded-xl py-1.5 min-w-[150px] animate-scale-in`}
+        {/* Action Button / Menu */}
+        <DropdownMenu open={showMenu} onOpenChange={setShowMenu}>
+          <DropdownMenuTrigger
+            aria-label="Tùy chọn tin nhắn"
+            className={`p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all ${
+              isOwn ? 'mr-1' : 'ml-1'
+            }`}
+          >
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground h-7 w-7 p-0"
             >
-              <button
-                onClick={handleCopy}
-                className="w-full px-4 py-2 text-left text-xs font-bold flex items-center gap-2.5 hover:bg-surface-hover text-content transition-colors"
+              <MoreHorizontal size={14} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align={isOwn ? 'end' : 'start'} className="min-w-[150px]">
+            <DropdownMenuItem onClick={handleCopy}>
+              <Copy data-icon="inline-start" /> Sao chép
+            </DropdownMenuItem>
+            {isOwn ? (
+              <DropdownMenuItem
+                data-variant="destructive"
+                onClick={() => {
+                  onDelete(message._id || message.id);
+                  setShowMenu(false);
+                }}
               >
-                <Copy size={16} /> Sao chép
-              </button>
-              {isOwn ? (
-                <button
-                  onClick={() => {
-                    onDelete(message._id || message.id);
-                    setShowMenu(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-xs font-bold flex items-center gap-2.5 hover:bg-error/5 text-error transition-colors"
-                >
-                  <Trash2 size={16} /> Gỡ bỏ
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    onReport(message._id || message.id);
-                    setShowMenu(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-xs font-bold flex items-center gap-2.5 hover:bg-warning/5 text-warning transition-colors"
-                >
-                  <Flag size={16} /> Báo cáo
-                </button>
-              )}
-            </div>
-          </>
-        )}
+                <Trash2 data-icon="inline-start" /> Gỡ bỏ
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                data-variant="destructive"
+                onClick={() => {
+                  onReport(message._id || message.id);
+                  setShowMenu(false);
+                }}
+              >
+                <Flag data-icon="inline-start" /> Báo cáo
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
@@ -217,7 +235,7 @@ const MessageDetail = () => {
   const { socket, isConnected, joinRoom, leaveRoom, isUserOnline } =
     useSocketContext() || {};
 
-  const { user: currentUser } = useSelector(state => state.auth);
+  const currentUser = useAuthStore(state => state.user);
 
   // Queries
   const { data: conversationsData } = useConversations();
@@ -456,7 +474,7 @@ const MessageDetail = () => {
   if (!conversation && conversationLoading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center space-y-4 bg-white dark:bg-neutral-950">
-        <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+        <Spinner className="w-10 h-10 text-blue-500" />
         <p className="text-sm font-bold text-neutral-400 uppercase tracking-widest">
           Đang tải cuộc trò chuyện...
         </p>
@@ -471,24 +489,31 @@ const MessageDetail = () => {
       {/* Header */}
       <div className="flex items-center justify-between p-4 px-6 bg-surface/80 backdrop-blur-xl z-20 shadow-sm">
         <div className="flex items-center gap-4">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => navigate('/messages')}
-            className="md:hidden p-2 -ml-2 rounded-full hover:bg-surface-hover transition-colors"
+            className="md:hidden -ml-2 rounded-full text-secondary"
+            aria-label="Quay lại"
           >
-            <ArrowLeft size={20} className="text-secondary" />
-          </button>
+            <ArrowLeft size={20} />
+          </Button>
 
           <div
             className="relative group cursor-pointer"
             onClick={() => conversation?.isGroup && setShowGroupInfo(true)}
           >
-            <img
-              src={chatAvatar}
-              alt=""
-              className="w-11 h-11 rounded-full object-cover group-hover:scale-105 transition-transform ring-2 ring-transparent group-hover:ring-primary/20"
-            />
+            <Avatar className="size-11 group-hover:scale-105 transition-transform ring-2 ring-transparent group-hover:ring-primary/20">
+              <AvatarImage
+                src={chatAvatar}
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+              <AvatarFallback>{getInitials(chatName)}</AvatarFallback>
+            </Avatar>
             {!conversation?.isGroup && isOnline && (
-              <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-success rounded-full" />
+              <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-success rounded-full ring-2 ring-background" />
             )}
           </div>
 
@@ -518,18 +543,31 @@ const MessageDetail = () => {
         </div>
 
         <div className="flex items-center gap-1">
-          <button className="yb-btn-ghost p-2.5 rounded-full transition-all text-secondary hover:text-primary">
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            className="rounded-full text-secondary hover:text-primary"
+            aria-label="Gọi điện"
+          >
             <Phone size={20} />
-          </button>
-          <button className="yb-btn-ghost p-2.5 rounded-full transition-all text-secondary hover:text-primary">
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            className="rounded-full text-secondary hover:text-primary"
+            aria-label="Gọi video"
+          >
             <Video size={20} />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-lg"
             onClick={() => setShowGroupInfo(true)}
-            className="yb-btn-ghost p-2.5 rounded-full transition-all text-secondary hover:text-primary"
+            className="rounded-full text-secondary hover:text-primary"
+            aria-label="Thông tin"
           >
             <Info size={22} />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -537,7 +575,7 @@ const MessageDetail = () => {
       <div className="flex-1 overflow-y-auto p-4 px-6 space-y-4 scroll-smooth custom-scrollbar relative bg-surface-secondary/30">
         {isLoading && messages.length === 0 ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3 bg-surface/50 backdrop-blur-[2px] z-10">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <Spinner className="w-8 h-8 text-primary" />
             <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
               Đang tải tin nhắn...
             </p>
@@ -618,16 +656,19 @@ const MessageDetail = () => {
                   alt=""
                   className="w-20 h-20 rounded-xl object-cover"
                 />
-                <button
+                <Button
+                  variant="default"
+                  size="icon"
                   onClick={() =>
                     setSelectedImages(prev =>
                       prev.filter((_, idx) => idx !== i)
                     )
                   }
-                  className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1 hover:bg-error transition-colors"
+                  className="absolute -top-2 -right-2 rounded-full p-1 hover:bg-destructive"
+                  aria-label="Gỡ ảnh"
                 >
                   <X size={12} />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
@@ -669,15 +710,23 @@ const MessageDetail = () => {
 
           />
           <div className="flex items-center bg-surface-secondary rounded-2xl flex-1 px-1 focus-within:bg-white transition-all duration-300">
-            <button
+            <Button
+              variant="ghost"
+              size="icon-lg"
               onClick={() => fileInputRef.current?.click()}
-              className="yb-btn-ghost p-3 text-secondary hover:text-primary rounded-full transition-all"
+              className="rounded-full text-secondary hover:text-primary"
+              aria-label="Đính kèm ảnh"
             >
               <ImageIcon size={20} />
-            </button>
-            <button className="yb-btn-ghost p-3 text-secondary hover:text-primary rounded-full transition-all">
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-lg"
+              className="rounded-full text-secondary hover:text-primary"
+              aria-label="Biểu cảm"
+            >
               <Smile size={20} />
-            </button>
+            </Button>
             <input
               type="text"
               value={messageText}
@@ -687,21 +736,23 @@ const MessageDetail = () => {
               className="flex-1 bg-transparent border-none py-4 px-2 text-sm focus:outline-none text-content placeholder:text-text-tertiary font-medium"
             />
           </div>
-          <button
+          <Button
             onClick={handleSend}
             disabled={
               (!messageText.trim() && selectedImages.length === 0) ||
               sendMessageMutation.isPending
             }
-            className={`yb-btn p-4 rounded-full transition-all duration-300 ${
+            size="icon-lg"
+            className={`rounded-full transition-all duration-300 ${
               (messageText.trim() || selectedImages.length > 0) &&
               !sendMessageMutation.isPending
-                ? 'yb-btn-primary hover:scale-105 active:scale-95'
-                : 'bg-surface-secondary text-text-tertiary cursor-not-allowed'
+                ? 'hover:scale-105 active:scale-95'
+                : 'bg-muted text-muted-foreground hover:bg-muted'
             }`}
+            aria-label="Gửi tin nhắn"
           >
             {sendMessageMutation.isPending ? (
-              <Loader2 size={24} className="animate-spin" />
+              <Spinner className="size-6" />
             ) : (
               <Send
                 size={24}
@@ -710,7 +761,7 @@ const MessageDetail = () => {
                 }
               />
             )}
-          </button>
+          </Button>
         </div>
       </div>
 
